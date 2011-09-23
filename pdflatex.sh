@@ -140,7 +140,7 @@ ${txtbld}Options${txtrst}:
   -2x2 FILE            put four pages of the PDF FILE on a single A4 sheet
                        (the output will be in FILE-nup.pdf file)
   +3                   run latex/pdflatex thrice (default is twice)
-  -sync                append -synctex=1 to pdflatex command
+  +sync                append -synctex=1 to pdflatex command
   +b                   make also bibtex
   -b   FILE            make ONLY bibtex
   -c   FILE            cleanup (remove auxiliary files)
@@ -385,7 +385,7 @@ while [[ -n $1 ]] ; do
     -2x1)   pdf_manipulation "2x1" "$2" ; exit 0 ;;
     -2x2)   pdf_manipulation "2x2" "$2" ; exit 0 ;;
     +3)     THRICE="2" ; shift ;;
-    -sync)  SYNCTEXFLAG="-synctex=1" ; shift ;;
+    +sync)  SYNCTEXFLAG="-synctex=1" ; shift ;;
     +b)     MAKEBIBTEXARG="yes" ; shift ;;
     -b)     MAKEONLYBIBTEXARG="yes" ; shift ; break ;;
     -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi" ; cleanup "$2"; exit 0 ;;
