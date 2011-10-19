@@ -19,7 +19,8 @@ DESCRIPTION
 Bash script to compile (La)TeX files (with BibTeX, indices and PSTricks if
 necessary), convert images to include them in (La)TeX files and to manipulate
 output PDF documents.  The script also lets you check syntactic and semantic
-correctness of (La)TeX source files, e.g. with the use of *ChkTeX*.
+correctness of (La)TeX source files, e.g. with the use of *ChkTeX*, and create
+handouts from beamer slides.
 
 It is possible to customize programs (like PDF viewer) and its settings that
 are used by the script in **Programs** and **Options** sections in the source
@@ -59,10 +60,13 @@ OPTIONS
     -sc  [LANG] FILE     run interactive spell checker (by default LANG="en_GB"
                          and UTF-8 encoding is used)
     +sync                enable synchronization between source file and the
-                         resulting DVI or PDF file (see also: [1])
+                         resulting DVI or PDF file
     +o                   open PDF (or DVI) file after compilation
     +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
     -V                   print script version
+
+(About `+sync` option see also [Direct and reverse synchronization with
+SyncTEX][1].)
 
 EXAMPLES
 --------
@@ -81,8 +85,8 @@ EXAMPLES
 
     pdflatex.sh +h beamer-presentation.tex
 
-> Compile and make handout from beamer presentation file (the output should be
-> in `beamer-presentation-handout.pdf` file).
+> Compile `beamer-presentation.tex` beamer presentation file and make a handout
+> of it (the output should be in `beamer-presentation-handout.pdf` file).
 
     pdflatex.sh -kk file.tex
 
@@ -119,4 +123,4 @@ COPYRIGHT
     FROM HTTP://WWW.OPENSOURCE.ORG.
 
 
-[1]: [http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf](http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf)  "Direct and reverse synchronization with SyncTEX"
+[1]: http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf "Direct and reverse synchronization with SyncTEX"
