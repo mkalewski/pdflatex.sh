@@ -8,7 +8,7 @@ NAME
 SYNOPSIS
 --------
     pdflatex.sh  -h | -V
-    pdflatex.sh  [ +3 +b +i +o +p ]  FILE(.tex)
+    pdflatex.sh  [ +3 +b +h +i +o +p +sync ]  FILE(.tex)
     pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
     pdflatex.sh  -gs | -rs | -gd | -rd  DIR
     pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
@@ -45,6 +45,9 @@ OPTIONS
     -gd  DIR             convert DIA images in directory DIR
     -rd  DIR             convert DIA images in directory DIR recursively
     -h                   print (this) help message and exit
+    +h                   make handout from beamer presentation, i.e. without
+                         overlays, pauses, and other beamer effects (the output
+                         will be in FILE-handout.pdf file)
     +i                   make also index
     -i   FILE            make ONLY index
     -k   FILE            run 'chktex' command (if available)
@@ -55,6 +58,8 @@ OPTIONS
     -ss  FILE            STRICTLY check sentence separators
     -sc  [LANG] FILE     run interactive spell checker (by default LANG="en_GB"
                          and UTF-8 encoding is used)
+    +sync                enable synchronization between source file and the
+                         resulting DVI or PDF file (see also: [1])
     +o                   open PDF (or DVI) file after compilation
     +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
     -V                   print script version
@@ -73,6 +78,11 @@ EXAMPLES
     pdflatex.sh +p file.tex
 
 > Compile `file.tex` with the use of PSTricks.
+
+    pdflatex.sh +h beamer-presentation.tex
+
+> Compile and make handout from beamer presentation file (the output should be
+> in `beamer-presentation-handout.pdf` file).
 
     pdflatex.sh -kk file.tex
 
@@ -107,3 +117,6 @@ COPYRIGHT
     TERMS AND CONDITIONS OF THE MIT LICENSE.  YOU SHOULD HAVE RECEIVED A COPY
     OF THE LICENSE ALONG WITH THIS SOFTWARE; IF NOT, YOU CAN DOWNLOAD A COPY
     FROM HTTP://WWW.OPENSOURCE.ORG.
+
+
+[1]: [http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf](http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf)  "Direct and reverse synchronization with SyncTEX"

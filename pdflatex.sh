@@ -14,7 +14,7 @@
 #
 #  SYNOPSIS
 #    pdflatex.sh  -h | -V
-#    pdflatex.sh  [ +3 +b +i +o +p ]  FILE(.tex)
+#    pdflatex.sh  [ +3 +b +h +i +o +p +sync ]  FILE(.tex)
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
 #    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
 #    pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.0.0
+VERSION=3.0.2
 
 
 # PROGRAMS
@@ -61,6 +61,7 @@ ASPELL_LANG_OPT="-l en_GB"
 CHKTEX_OPT="-q -v1"
 LATEX_BATCHMODE_OPT="-interaction batchmode"
 #LATEX_OUTPUT_DIRECTORY_OPT="-output-directory"
+PDFLATEX_SYNCTEX_OPT="-synctex=1"
 PDFNUP_OPT="--paper a4paper --frame true --scale 0.96 --delta \"2mm 2mm\""
 PS4PDF_LATEX_OPT="\AtBeginDocument{\RequirePackage{pst-pdf}}"
 
@@ -76,11 +77,14 @@ OUTPUT_DIRECTORY=
 
 # Extensions of auxiliary files:
 AUXILIARYEXTS=\
-"aux idx ilg ind out toc lot lof loa nav snm vrb bbl blg svn"     # " log dvi"
+"aux idx ilg ind out toc lot lof loa nav snm vrb bbl blg svn"
+  #  + " log dvi synctex.gz"
 AUXILIARYEXTS_BIBTEX=\
-"aux idx ilg ind out toc lot lof loa nav snm vrb blg svn dvi pdf" # " log bbl"
+"aux idx ilg ind out toc lot lof loa nav snm vrb blg svn dvi pdf synctex.gz"
+  #  + " log bbl"
 AUXILIARYEXTS_INDEX=\
-"aux ilg ind out toc lot lof loa nav snm vrb bbl blg svn dvi log pdf" # " idx"
+"aux ilg ind out toc lot lof loa nav snm vrb bbl blg svn dvi log pdf synctex.gz"
+  #  + " idx"
 
 # Base name of the script:
 THENAME="$(basename $0)"
@@ -117,12 +121,15 @@ NOTE:  If the script is run as 'pdflatex.sh' then 'pdflatex' command is used
 output file).  Thus if necessary, the 'latex.sh' symbolic link can be created
 to use the script easily.
 
+${txtbld}For more information, please visit${txtrst}:  \
+<https://github.com/mkalewski/pdflatex.sh>
+
 ${txtbld}Usage${txtrst}:
   pdflatex.sh  -h | -V
     Print help or version.
 
-  pdflatex.sh  [ +3  +b  +i  +o  +p ]  FILE(.tex)
-    Compile TeX/LaTeX files.
+  pdflatex.sh  [ +3 +b +h +i +o +p +sync ]  FILE(.tex)
+    Compile (La)TeX files.
 
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
     PDF documents manipulation.
@@ -148,6 +155,9 @@ ${txtbld}Options${txtrst}:
   -gd  DIR             convert DIA images in directory DIR
   -rd  DIR             convert DIA images in directory DIR recursively
   -h                   print (this) help message and exit
+  +h                   make handout from beamer presentation, i.e. without
+                       overlays, pauses, and other beamer effects (the output
+                       will be in FILE-handout.pdf file)
   +i                   make also index
   -i   FILE            make ONLY index
   -k   FILE            run 'chktex' command (if available)
@@ -158,6 +168,8 @@ ${txtbld}Options${txtrst}:
   -ss  FILE            STRICTLY check sentence separators
   -sc  [LANG] FILE     run interactive spell checker (by default LANG="en_GB"
                        and UTF-8 encoding is used)
+  +sync                enable synchronization between source file and the
+                       resulting DVI or PDF file
   +o                   open PDF (or DVI) file after compilation
   +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
   -V                   print script version
@@ -166,6 +178,7 @@ ${txtbld}Examples${txtrst}:
   pdflatex.sh file.tex
   pdflatex.sh +b +i +o file.tex
   pdflatex.sh +p file.tex
+  pdflatex.sh +h beamer-presentation.tex
   pdflatex.sh -kk file.tex
   pdflatex.sh -gs img/
   pdflatex.sh -2x1 file.pdf
@@ -359,7 +372,12 @@ function spell_checker() {
 # Runs (pdf)latex
 function run_pdflatex() {
   echo -ne "$TEXT..."
-  $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
+  if [[ -n $APPENDSYNCTEX ]] ; then
+    $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
+      "$FILENAME" >&- 2>&-
+  else
+    $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
+  fi
   local ERR=`grep -i error "$FILENAME".log`
   if [[ -n $ERR ]] ; then
     echo -ne "\t\t\t\t${txtred}[done]"
@@ -368,6 +386,14 @@ function run_pdflatex() {
     AUXILIARYEXTS="$AUXILIARYEXTS log"
     echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
   fi
+}
+
+# Sets (La)TeX beamer preamble for handouts
+function beamer_handout() {
+  sed -e 's/\\documentclass\[/\\documentclass[handout,/g'\
+  -e 's/\\documentclass{/\\documentclass[handout]{/g'\
+  $FILENAME.tex > $FILENAME-handout.tex || die
+  FILENAME=$FILENAME-handout
 }
 
 
@@ -384,26 +410,29 @@ while [[ -n $1 ]] ; do
     -2x1)   pdf_manipulation "2x1" "$2" ; exit 0 ;;
     -2x2)   pdf_manipulation "2x2" "$2" ; exit 0 ;;
     +3)     THRICE="2" ; shift ;;
-    +b)     MAKEBIBTEXARG="yes" ; shift ;;
-    -b)     MAKEONLYBIBTEXARG="yes" ; shift ; break ;;
-    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi" ; cleanup "$2"; exit 0 ;;
+    +b)     MAKEBIBTEXARG="true" ; shift ;;
+    -b)     MAKEONLYBIBTEXARG="true" ; shift ; break ;;
+    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi synctex.gz" ; cleanup "$2"; \
+            exit 0 ;;
     -gs)    CONVERTIMGARG="svg" ; shift ; convert_images "$@" ; break ;;
-    -rs)    CONVERTIMGRARG="svg" ; shift ; convert_images "$@" ;  break ;;
+    -rs)    CONVERTIMGRARG="svg" ; shift ; convert_images "$@" ; break ;;
     -gd)    CONVERTIMGARG="dia" ; shift ; convert_images "$@" ; break ;;
-    -rd)    CONVERTIMGRARG="dia" ; shift ; convert_images "$@" ;  break ;;
+    -rd)    CONVERTIMGRARG="dia" ; shift ; convert_images "$@" ; break ;;
     -h)     print_help ; exit 0 ;;
-    +i)     MAKEINDEXARG="yes" ; shift ;;
-    -i)     MAKEONLYINDEXARG="yes" ; shift ; break ;;
-    -k)     CHKTEX="yes" ; shift ; break ;;
-    -kk)    CHKTEX_OPT="$CHKTEX_OPT -n all" ;\
-            CHKTEX="yes" ; shift ; break ;;
+    +h)     MAKEHANDOUT="true" ; shift ;;
+    +i)     MAKEINDEXARG="true" ; shift ;;
+    -i)     MAKEONLYINDEXARG="true" ; shift ; break ;;
+    -k)     CHKTEX="true" ; shift ; break ;;
+    -kk)    CHKTEX_OPT="$CHKTEX_OPT -n all" ; \
+            CHKTEX="true" ; shift ; break ;;
     -l)     shift ; line_width "$@" ; break ;;
-    -n)     hardspaces "$2"; exit 0 ;;
+    -n)     hardspaces "$2" ; exit 0 ;;
     -s)     sentences "basic" "$2" ; exit 0 ;;
     -ss)    sentences "strict" "$2" ; exit 0 ;;
     -sc)    shift ; spell_checker "$@" ; break ;;
-    +o)     OPENPDFARG="yes" ; shift ;;
-    +p)     USEPS4PDFARG="yes" ; shift ;;
+    +sync)  APPENDSYNCTEX="true" ; shift ;;
+    +o)     OPENPDFARG="true" ; shift ;;
+    +p)     USEPS4PDFARG="true" ; shift ;;
     -[vV])  echo "$THEREALNAME  $VERSION" ; echo ; exit 0 ;;
     -*)     echo -ne "Unknown switch: ${txtylw}$1${txtrst}." ;
             echo "  Type:  \"${txtbld}$THEREALNAME -h${txtrst}\"  for help." ;
@@ -422,6 +451,14 @@ if [[ -z $OUTPUT_DIRECTORY && -n $1 ]] ; then
   OUTPUT_DIRECTORY=$(dirname $1)
 fi
 if [[ -n $OUTPUT_DIRECTORY ]] ; then cd $OUTPUT_DIRECTORY ; fi
+
+# Beamer handouts (part 1 of 2)
+if [[ -n $MAKEHANDOUT ]] ; then
+  if [[ ! -e $FILENAME.tex ]] ; then
+    die "Source file ${txtylw}$FILENAME.tex${txtrst} missing."
+  fi
+  beamer_handout
+fi
 
 # 'chktex' command
 if [[ -n $CHKTEX ]] ; then
@@ -511,8 +548,13 @@ else
   else
     echo "${txtgrn}[done]${txtrst}"
     echo -ne "$TEXT...\t\t\t\t"
-    $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
-      \input{$FILENAME}" >&- 2>&-
+    if [[ -n $APPENDSYNCTEX ]] ; then
+      $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
+        "$PS4PDF_LATEX_OPT \input{$FILENAME}" >&- 2>&-
+    else
+      $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
+        \input{$FILENAME}" >&- 2>&-
+    fi
     echo "${txtgrn}[done]${txtrst}"
     AUXILIARYEXTS="$AUXILIARYEXTS log"
   fi
@@ -523,6 +565,15 @@ if [[ $LATEX_PROGRAM != "latex" ]] ; then
   AUXILIARYEXTS="$AUXILIARYEXTS dvi"
 fi
 cleanup "$FILENAME"
+
+# Beamer handouts (part 2 of 2)
+if [[ -n $MAKEHANDOUT ]] ; then
+  pdf_manipulation "2x2" "$FILENAME.pdf"
+  echo -ne "${txtund}BEAMER HANDOUTS${txtrst}..."
+  mv -f $FILENAME-nup.pdf $FILENAME.pdf 2>&- || die
+  rm -f $FILENAME.tex 2>&- || die
+  echo -e "\t\t\t${txtgrn}[done]${txtrst}"
+fi
 
 # PDF browser
 if [[ -n $OPENPDFARG && -e $FILENAME.pdf ]] ; then
