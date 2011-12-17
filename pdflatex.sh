@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.0.2
+VERSION=3.0.3
 
 
 # PROGRAMS
@@ -252,8 +252,8 @@ function convert_images() {
     check_programs "$INKSCAPE_PROGRAM" #EPSTOPDF_PROGRAM
     echo -ne "CONVERT IMG..."
     for IMG in $IMGFILES ; do
-      $INKSCAPE_PROGRAM -T -A "${IMG%.svg}.pdf" "$IMG" || die
-      $INKSCAPE_PROGRAM -T -P "${IMG%.svg}.ps" "$IMG"  || die
+      $INKSCAPE_PROGRAM -T -A "${IMG%.svg}.pdf" "$IMG" 2>/dev/null || die
+      $INKSCAPE_PROGRAM -T -P "${IMG%.svg}.ps" "$IMG" 2>/dev/null || die
       #$EPSTOPDF_PROGRAM "${IMG%.svg}.eps"
       echo -ne "."
     done
