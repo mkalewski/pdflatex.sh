@@ -1,7 +1,7 @@
 #!/bin/bash
 # UTF-8
 
-#  (c) 2007-2011 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+#  (c) 2007-2012 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 #
 #  This program comes with ABSOLUTELY NO WARRANTY.
 #  THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE
@@ -18,11 +18,11 @@
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
 #    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
 #    pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-#                 | -sc [LANG]  FILE(.tex)
+#                   | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
-#    Bash script to compile TeX/LaTeX files and more.  Just run the script to
-#    get help: './pdflatex.sh' (or './pdflatex.sh -h').
+#    A bash script to simplify TeX/LaTeX files compilation and more.  Just run
+#    the script to get more information: './pdflatex.sh'.
 #
 #  REPORTING BUGS
 #    <https://github.com/mkalewski/pdflatex.sh/issues>
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.0.3
+VERSION=3.0.4
 
 
 # PROGRAMS
@@ -110,10 +110,10 @@ txtrst=$(tput sgr0)     # text reset
 function print_help() {
 cat <<EOF
 
-${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2011\
+${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2012\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
-                ${txtund}BASH SCRIPT TO COMPILE TeX/LaTeX FILES AND\
+        ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX FILES COMPILATION AND\
  MORE${txtrst}
 
 NOTE:  If the script is run as 'pdflatex.sh' then 'pdflatex' command is used
@@ -138,7 +138,7 @@ ${txtbld}Usage${txtrst}:
     Convert images.
 
   pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-               | -sc [LANG]  FILE(.tex)
+                 | -sc [LANG]  FILE(.tex)
     Miscellaneous operations.
 
 ${txtbld}Options${txtrst}:
@@ -250,7 +250,7 @@ function convert_images() {
   fi
   if [[ $CONVERTIMGARG == "svg" || $CONVERTIMGRARG == "svg" ]] ; then
     check_programs "$INKSCAPE_PROGRAM" #EPSTOPDF_PROGRAM
-    echo -ne "CONVERT IMG..."
+    echo -ne "CONVERT IMAGES..."
     for IMG in $IMGFILES ; do
       $INKSCAPE_PROGRAM -T -A "${IMG%.svg}.pdf" "$IMG" 2>/dev/null || die
       $INKSCAPE_PROGRAM -T -P "${IMG%.svg}.ps" "$IMG" 2>/dev/null || die
@@ -259,7 +259,7 @@ function convert_images() {
     done
   elif [[ $CONVERTIMGARG == "dia" || $CONVERTIMGRARG == "dia" ]] ; then
     check_programs "$DIA_PROGRAM"
-    echo -ne "CONVERT IMG..."
+    echo -ne "CONVERT IMAGES..."
     for IMG in $IMGFILES ; do
       $DIA_PROGRAM -t pdf "${IMG}" >&- 2>&-  || die
       $DIA_PROGRAM -t eps "${IMG}" >&- 2>&-  || die
@@ -381,10 +381,16 @@ function run_pdflatex() {
   local ERR=`grep -i error "$FILENAME".log`
   if [[ -n $ERR ]] ; then
     echo -ne "\t\t\t\t${txtred}[done]"
-    echo "  ${txtbld}(With errors!  See LOG file.)${txtrst}"
+    echo "  ${txtbld}(With errors!  See $FILENAME.log file.)${txtrst}"
   else
     AUXILIARYEXTS="$AUXILIARYEXTS log"
-    echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
+    local ERR=`grep -i warning "$FILENAME".log`
+    echo -ne "\t\t\t\t${txtgrn}[done]"
+    if [[ -n $ERR ]] ; then
+      echo "  (With warnings.)${txtrst}"
+    else
+      echo  "${txtrst}"
+    fi
   fi
 }
 
@@ -490,17 +496,20 @@ if [[ -z $USEPS4PDFARG ]] ; then
   done
 fi
 
-# Bibtext
+# Bibtex
 if [[ -n $MAKEBIBTEXARG || -n $MAKEONLYBIBTEXARG ]] ; then
   check_programs "$BIBTEX_PROGRAM"
-  echo -ne "${txtund}BIBTEXT${txtrst}..."
-  BIBERR=`$BIBTEX_PROGRAM "$FILENAME" 2>&-`
-  BIBERR=`echo $BIBERR | grep -i error`
+  echo -ne "${txtund}BIBTEX${txtrst}..."
+  rm -f "$FILENAME-bibtex.log" >&- 2>&-  # old BibTeX log file
+  BIBOUT=`$BIBTEX_PROGRAM "$FILENAME" 2>&-`
+  BIBERR=`echo $BIBOUT | egrep -i "error|warning"`
   if [[ -n $BIBERR ]] ; then
-    echo -e "\t\t\t\t${txtred}[done]  ${txtbld}(With errors!)${txtrst}"
+    echo $BIBOUT > $FILENAME-bibtex.log
+    echo -ne "\t\t\t\t${txtred}[done]"
+    echo "  ${txtbld}(With errors!  See $FILENAME-bibtex.log file.)${txtrst}"
   else
-    echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
-    AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_BIBTEX log"
+      echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
+      AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_BIBTEX log"
   fi
   run_pdflatex
 fi
@@ -544,9 +553,14 @@ else
   ERR=`egrep -i "error|emergency stop" "$FILENAME".log`
   if [[ -n $ERR ]] ; then
     echo -ne "${txtred}[done]"
-    echo "  ${txtbld}(With errors! See LOG file.)${txtrst}"
+    echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
   else
-    echo "${txtgrn}[done]${txtrst}"
+    ERR=`grep -i "warning" "$FILENAME".log`
+    if [[ -n $ERR ]] ; then
+      echo "${txtgrn}[done]  (With warnings.)${txtrst}"
+    else
+      echo "${txtgrn}[done]${txtrst}"
+    fi
     echo -ne "$TEXT...\t\t\t\t"
     if [[ -n $APPENDSYNCTEX ]] ; then
       $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
@@ -555,7 +569,12 @@ else
       $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
         \input{$FILENAME}" >&- 2>&-
     fi
-    echo "${txtgrn}[done]${txtrst}"
+    ERR=`grep -i "warning" "$FILENAME".log`
+    if [[ -n $ERR ]] ; then
+      echo "${txtgrn}[done]  (With warnings.)${txtrst}"
+    else
+      echo "${txtgrn}[done]${txtrst}"
+    fi
     AUXILIARYEXTS="$AUXILIARYEXTS log"
   fi
 fi
