@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.0.4
+VERSION=3.0.5
 
 
 # PROGRAMS
@@ -384,13 +384,7 @@ function run_pdflatex() {
     echo "  ${txtbld}(With errors!  See $FILENAME.log file.)${txtrst}"
   else
     AUXILIARYEXTS="$AUXILIARYEXTS log"
-    local ERR=`grep -i warning "$FILENAME".log`
-    echo -ne "\t\t\t\t${txtgrn}[done]"
-    if [[ -n $ERR ]] ; then
-      echo "  (With warnings.)${txtrst}"
-    else
-      echo  "${txtrst}"
-    fi
+    echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
   fi
 }
 
@@ -555,12 +549,7 @@ else
     echo -ne "${txtred}[done]"
     echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
   else
-    ERR=`grep -i "warning" "$FILENAME".log`
-    if [[ -n $ERR ]] ; then
-      echo "${txtgrn}[done]  (With warnings.)${txtrst}"
-    else
-      echo "${txtgrn}[done]${txtrst}"
-    fi
+    echo "${txtgrn}[done]${txtrst}"
     echo -ne "$TEXT...\t\t\t\t"
     if [[ -n $APPENDSYNCTEX ]] ; then
       $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
@@ -569,12 +558,7 @@ else
       $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
         \input{$FILENAME}" >&- 2>&-
     fi
-    ERR=`grep -i "warning" "$FILENAME".log`
-    if [[ -n $ERR ]] ; then
-      echo "${txtgrn}[done]  (With warnings.)${txtrst}"
-    else
-      echo "${txtgrn}[done]${txtrst}"
-    fi
+    echo "${txtgrn}[done]${txtrst}"
     AUXILIARYEXTS="$AUXILIARYEXTS log"
   fi
 fi
