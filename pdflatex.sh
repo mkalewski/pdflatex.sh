@@ -14,11 +14,11 @@
 #
 #  SYNOPSIS
 #    pdflatex.sh  -h | -V
-#    pdflatex.sh  [ +3 +b +h +i +o +p +sync ]  FILE(.tex)
+#    pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
 #    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
 #    pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-#                   | -sc [LANG]  FILE(.tex)
+#                 | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
 #    A bash script to simplify TeX/LaTeX files compilation and more.  Just run
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.0.5
+VERSION=3.1.0
 
 
 # PROGRAMS
@@ -128,7 +128,7 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -h | -V
     Print help or version.
 
-  pdflatex.sh  [ +3 +b +h +i +o +p +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
     Compile (La)TeX files.
 
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
@@ -146,9 +146,9 @@ ${txtbld}Options${txtrst}:
                        (the output will be in FILE-nup.pdf file)
   -2x2 FILE            put four pages of the PDF FILE on a single A4 sheet
                        (the output will be in FILE-nup.pdf file)
-  +3                   run latex/pdflatex thrice (default is twice)
-  +b                   make also bibtex
-  -b   FILE            make ONLY bibtex
+  +3                   run 'latex'/'pdflatex' thrice (default is twice)
+  -b   FILE            make ONLY BibTeX
+  +b                   make ALSO BibTeX
   -c   FILE            cleanup (remove auxiliary files)
   -gs  DIR             convert SVG images in directory DIR
   -rs  DIR             convert SVG images in directory DIR recursively
@@ -156,15 +156,17 @@ ${txtbld}Options${txtrst}:
   -rd  DIR             convert DIA images in directory DIR recursively
   -h                   print (this) help message and exit
   +h                   make handout from beamer presentation, i.e. without
-                       overlays, pauses, and other beamer effects (the output
+                       overlays, pauses, and other Beamer effects (the output
                        will be in FILE-handout.pdf file)
-  +i                   make also index
-  -i   FILE            make ONLY index
+  -i   FILE            make ONLY index (MakeIndex)
+  +i                   make ALSO index (MakeIndex)
   -k   FILE            run 'chktex' command (if available)
   -kk  FILE            the same as '-k' but only errors are shown
   -l   [WIDTH] FILE    check maximum line width (by default WIDTH=80)
   -n   FILE            check non-breaking spaces
   -s   FILE            check sentence separators
+  +s                   print a summary of problems (errors and warnings) after
+                       compilation
   -ss  FILE            STRICTLY check sentence separators
   -sc  [LANG] FILE     run interactive spell checker (by default LANG="en_GB"
                        and UTF-8 encoding is used)
@@ -225,7 +227,11 @@ function cleanup() {
   fi
   echo -ne "CLEANUP..."
   for EXTENSION in $AUXILIARYEXTS ; do
-    rm -f "${1%.tex}.$EXTENSION" >&- 2>&-
+    if [[ $EXTENSION == "-bibtex.log" ]] ; then
+      rm -f "${1%.tex}-bibtex.log" >&- 2>&-
+    else
+      rm -f "${1%.tex}.$EXTENSION" >&- 2>&-
+    fi
     echo -ne "."
   done
   if [[ -n $USEPS4PDFARG ]] ; then
@@ -275,7 +281,7 @@ function pdf_manipulation() {
     die "${txtylw}Too few arguments.${txtrst}"
   fi
   check_programs "$PDFNUP_PROGRAM"
-  echo -ne "PDFJAM..."
+  echo -ne "${txtund}PDFJAM${txtrst}..."
   local ERR=`eval $PDFNUP_PROGRAM --nup $1 $PDFNUP_OPT $2 2>&1`
   local ERR=`echo $ERR | grep -i error`
   if [[ -n $ERR ]] ; then
@@ -378,10 +384,14 @@ function run_pdflatex() {
   else
     $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
   fi
-  local ERR=`grep -i error "$FILENAME".log`
+  local ERR=`grep -i error "$FILENAME".log | grep -v -i infwarerr`
   if [[ -n $ERR ]] ; then
     echo -ne "\t\t\t\t${txtred}[done]"
-    echo "  ${txtbld}(With errors!  See $FILENAME.log file.)${txtrst}"
+    if [[ -n $USEPS4PDFARG ]] ; then
+      echo "${txtrst}"
+    else
+      echo "  ${txtbld}(With errors!  See $FILENAME.log file.)${txtrst}"
+    fi
   else
     AUXILIARYEXTS="$AUXILIARYEXTS log"
     echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
@@ -412,13 +422,14 @@ while [[ -n $1 ]] ; do
     +3)     THRICE="2" ; shift ;;
     +b)     MAKEBIBTEXARG="true" ; shift ;;
     -b)     MAKEONLYBIBTEXARG="true" ; shift ; break ;;
-    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi synctex.gz" ; cleanup "$2"; \
-            exit 0 ;;
+    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi synctex.gz -bibtex.log" ; \
+            cleanup "$2"; exit 0 ;;
     -gs)    CONVERTIMGARG="svg" ; shift ; convert_images "$@" ; break ;;
     -rs)    CONVERTIMGRARG="svg" ; shift ; convert_images "$@" ; break ;;
     -gd)    CONVERTIMGARG="dia" ; shift ; convert_images "$@" ; break ;;
     -rd)    CONVERTIMGRARG="dia" ; shift ; convert_images "$@" ; break ;;
-    -h)     print_help ; exit 0 ;;
+    -[hH])  print_help ; exit 0 ;;
+    --help) print_help ; exit 0 ;;
     +h)     MAKEHANDOUT="true" ; shift ;;
     +i)     MAKEINDEXARG="true" ; shift ;;
     -i)     MAKEONLYINDEXARG="true" ; shift ; break ;;
@@ -433,6 +444,7 @@ while [[ -n $1 ]] ; do
     +sync)  APPENDSYNCTEX="true" ; shift ;;
     +o)     OPENPDFARG="true" ; shift ;;
     +p)     USEPS4PDFARG="true" ; shift ;;
+    +s)     SHOWSUMMARY="true" ; shift ;;
     -[vV])  echo "$THEREALNAME  $VERSION" ; echo ; exit 0 ;;
     -*)     echo -ne "Unknown switch: ${txtylw}$1${txtrst}." ;
             echo "  Type:  \"${txtbld}$THEREALNAME -h${txtrst}\"  for help." ;
@@ -481,14 +493,11 @@ TEXT=`echo $LATEX_PROGRAM | tr "a-z" "A-Z"`
 
 # First (pdf)latex compilation
 check_programs "$LATEX_PROGRAM"
-if [[ -z $USEPS4PDFARG ]] ; then
-  if [[ ! -e $FILENAME.tex ]] ; then
-    die "Source file ${txtylw}$FILENAME.tex${txtrst} missing."
-  fi
-  for X in `seq 1 $THRICE` ; do
-    run_pdflatex
-  done
+if [[ ! -e $FILENAME.tex ]] ; then
+  die "Source file ${txtylw}$FILENAME.tex${txtrst} missing."
 fi
+for X in `seq 1 $THRICE` ; do run_pdflatex ; done
+
 
 # Bibtex
 if [[ -n $MAKEBIBTEXARG || -n $MAKEONLYBIBTEXARG ]] ; then
@@ -498,7 +507,7 @@ if [[ -n $MAKEBIBTEXARG || -n $MAKEONLYBIBTEXARG ]] ; then
   BIBOUT=`$BIBTEX_PROGRAM "$FILENAME" 2>&-`
   BIBERR=`echo $BIBOUT | egrep -i "error|warning"`
   if [[ -n $BIBERR ]] ; then
-    echo $BIBOUT > $FILENAME-bibtex.log
+    echo "$BIBOUT" > $FILENAME-bibtex.log
     echo -ne "\t\t\t\t${txtred}[done]"
     echo "  ${txtbld}(With errors!  See $FILENAME-bibtex.log file.)${txtrst}"
   else
@@ -563,6 +572,14 @@ else
   fi
 fi
 
+# Problems summary (part 1 of 2)
+if [[ -n $SHOWSUMMARY ]] ; then
+  ERRORSNUM=`grep -i "^\! " "$FILENAME".log | wc -l`
+  ERRORS=`grep -A2 -i "^\! " "$FILENAME".log`
+  WARNINGS=`grep -i warning "$FILENAME".log | grep -v -i infwarerr`
+  WARNINGSNUM=`echo "$WARNINGS" | wc -l`
+fi
+
 # Cleanup
 if [[ $LATEX_PROGRAM != "latex" ]] ; then
   AUXILIARYEXTS="$AUXILIARYEXTS dvi"
@@ -572,7 +589,7 @@ cleanup "$FILENAME"
 # Beamer handouts (part 2 of 2)
 if [[ -n $MAKEHANDOUT ]] ; then
   pdf_manipulation "2x2" "$FILENAME.pdf"
-  echo -ne "${txtund}BEAMER HANDOUTS${txtrst}..."
+  echo -ne "BEAMER HANDOUTS..."
   mv -f $FILENAME-nup.pdf $FILENAME.pdf 2>&- || die
   rm -f $FILENAME.tex 2>&- || die
   echo -e "\t\t\t${txtgrn}[done]${txtrst}"
@@ -582,9 +599,24 @@ fi
 if [[ -n $OPENPDFARG && -e $FILENAME.pdf ]] ; then
   check_programs "$PDF_VIEWER_PROGRAM"
   echo -en "${txtbld}BROWSER${txtrst}...\t\t\t\t"
-  $PDF_VIEWER_PROGRAM "$FILENAME.pdf" 2>&- &
+  $PDF_VIEWER_PROGRAM "$FILENAME.pdf" 2>/dev/null &
   echo "${txtgrn}${txtbld}[done]${txtrst}"
-  mquit 0
+fi
+
+# Problems summary (part 2 of 2)
+if [[ -n $SHOWSUMMARY && ( $ERRORSNUM > 0 || $WARNINGSNUM > 0 ) ]] ; then
+  echo
+  echo \
+    "${txtund}${txtbld}SUMMARY:                                      ${txtrst}"
+  if [[ $ERRORSNUM > 0 ]] ; then
+    echo -e "${txtcyn}${txtbld}Errors ($ERRORSNUM):${txtrst}"
+    echo "$ERRORS" | grep -A2 -i "^\!" --color=auto
+    echo "______________________________________________"
+  fi
+  if [[ $WARNINGSNUM > 0 ]] ; then
+    echo -e "${txtblu}${txtbld}Warnings ($WARNINGSNUM):${txtrst}"
+    echo "$WARNINGS" | grep -i "warning"  --color=auto
+  fi
 fi
 
 mquit $?
