@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.1.0
+VERSION=3.1.1
 
 
 # PROGRAMS
@@ -574,8 +574,8 @@ fi
 
 # Problems summary (part 1 of 2)
 if [[ -n $SHOWSUMMARY ]] ; then
-  ERRORSNUM=`grep -i "^\! " "$FILENAME".log | wc -l`
-  ERRORS=`grep -A2 -i "^\! " "$FILENAME".log`
+  ERRORSNUM=`grep -i "^\!" "$FILENAME".log | wc -l`
+  ERRORS=`grep -A2 -i "^\!" "$FILENAME".log`
   WARNINGS=`grep -i warning "$FILENAME".log | grep -v -i infwarerr`
   WARNINGSNUM=`echo "$WARNINGS" | wc -l`
 fi
