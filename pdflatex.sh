@@ -574,10 +574,10 @@ fi
 
 # Problems summary (part 1 of 2)
 if [[ -n $SHOWSUMMARY ]] ; then
-  ERRORSNUM=`grep -i "^\!" "$FILENAME".log | wc -l`
+  ERRORSNUM=`grep -c -i "^\!" "$FILENAME".log`
   ERRORS=`grep -A2 -i "^\!" "$FILENAME".log`
   WARNINGS=`grep -i warning "$FILENAME".log | grep -v -i infwarerr`
-  WARNINGSNUM=`echo "$WARNINGS" | wc -l`
+  WARNINGSNUM=`echo "$WARNINGS" | grep -c -i warning`
 fi
 
 # Cleanup
