@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.1.2
+VERSION=3.1.3
 
 
 # PROGRAMS
@@ -553,7 +553,7 @@ else
   fi
   echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
   $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
-  ERR=`egrep -i "error|emergency stop" "$FILENAME".log`
+  ERR=`egrep -i "error|emergency stop" "$FILENAME".log | grep -v -i infwarerr`
   if [[ -n $ERR ]] ; then
     echo -ne "${txtred}[done]"
     echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
