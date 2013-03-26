@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # UTF-8
 
 #  (c) 2007-2012 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.1.3
+VERSION=3.1.4
 
 
 # PROGRAMS
@@ -543,34 +543,37 @@ if [[ -n $MAKEONLYINDEXARG ]] ; then
 fi
 
 # Final (pdf)latex compilation
-if [[ -z $USEPS4PDFARG ]] ; then
-  run_pdflatex
-else
-# Ps4pdf
-  check_programs "$PS4PDF_PROGRAM"
-  if [[ ! -e $FILENAME.tex ]] ; then
-    die "Source file ${txtylw}$FILENAME${txtrst} missing."
-  fi
-  echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
-  $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
-  ERR=`egrep -i "error|emergency stop" "$FILENAME".log | grep -v -i infwarerr`
-  if [[ -n $ERR ]] ; then
-    echo -ne "${txtred}[done]"
-    echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
+for X in `seq 1 $THRICE` ; do
+  if [[ -z $USEPS4PDFARG ]] ; then
+    run_pdflatex
   else
-    echo "${txtgrn}[done]${txtrst}"
-    echo -ne "$TEXT...\t\t\t\t"
-    if [[ -n $APPENDSYNCTEX ]] ; then
-      $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
-        "$PS4PDF_LATEX_OPT \input{$FILENAME}" >&- 2>&-
-    else
-      $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
-        \input{$FILENAME}" >&- 2>&-
+  # Ps4pdf
+    check_programs "$PS4PDF_PROGRAM"
+    if [[ ! -e $FILENAME.tex ]] ; then
+      die "Source file ${txtylw}$FILENAME${txtrst} missing."
     fi
-    echo "${txtgrn}[done]${txtrst}"
-    AUXILIARYEXTS="$AUXILIARYEXTS log"
+    echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
+    $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
+    ERR=\
+      `egrep -i "error|emergency stop" "$FILENAME".log | grep -v -i infwarerr`
+    if [[ -n $ERR ]] ; then
+      echo -ne "${txtred}[done]"
+      echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
+    else
+      echo "${txtgrn}[done]${txtrst}"
+      echo -ne "$TEXT...\t\t\t\t"
+      if [[ -n $APPENDSYNCTEX ]] ; then
+        $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
+          "$PS4PDF_LATEX_OPT \input{$FILENAME}" >&- 2>&-
+      else
+        $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
+          \input{$FILENAME}" >&- 2>&-
+      fi
+      echo "${txtgrn}[done]${txtrst}"
+      AUXILIARYEXTS="$AUXILIARYEXTS log"
+    fi
   fi
-fi
+done
 
 # Problems summary (part 1 of 2)
 if [[ -n $SHOWSUMMARY ]] ; then

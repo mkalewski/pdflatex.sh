@@ -4,7 +4,7 @@ pdflatex.sh
 
 :Author:  Michał Kalewski
 :Source:  https://github.com/mkalewski/pdflatex.sh
-:Version: 3.1.3
+:Version: 3.1.4
 
 
 Name
