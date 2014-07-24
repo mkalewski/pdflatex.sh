@@ -3,13 +3,10 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Source:  https://github.com/mkalewski/pdflatex.sh
-:Version: 3.1.4
+:Version: 3.2.0
+:License: MIT License
+:Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
-
-Name
-====
-`pdflatex.sh` -- compile (La)TeX files and more.
 
 Synopsis
 ========
@@ -24,37 +21,44 @@ Synopsis
 
 Description
 ===========
-A bash script to simplify (La)TeX files compilation with BibTeX, indices and
-PSTricks if necessary.  In the simplest case, the script is run as follows::
+A bash script to simplify (La)TeX files compilation with BibTeX, indices,
+PSTricks, and more.  In the simplest case, the script is run as follows::
 
   $ pdflatex.sh file.tex
 
-It can be also use to convert images to include them in (La)TeX files and to
-manipulate output PDF documents.  The script also lets you check syntactic and
-semantic correctness of (La)TeX source files, e.g. with the use of *ChkTeX*,
-and create handouts from beamer slides.  (See all options_.)
+Then, the ``file.tex`` file will be compiled twice with the use of the
+``pdflatex`` command and all auxiliary files will be removed after the
+compilation.
 
-It is possible to customize programs (like PDF viewer) and its settings that
-are used by the script in **Programs** and **Options** sections in the source
-code.
+The ``pdflatex.sh`` script can also be used to convert images to the PDF format
+and to manipulate output PDF documents.  The script also lets you check
+syntactic and semantic correctness of (La)TeX source files, e.g. with the use
+of *ChkTeX*, and create handouts from beamer slides (for more information see
+options_ and examples_).
+
+It is possible to customize the programs (like PDF viewer), which are used by
+the script in the **Programs** and **Options** sections in the source code.
 
 .. note::
 
-  If the script is run as `pdflatex.sh` then `pdflatex` command is used
-  (producing PDF output file), otherwise `latex` command is used (producing DVI
-  output file).  Thus if necessary, the `latex.sh` symbolic link can be created
-  to use the script easily.
+  If the script is run as `pdflatex.sh`, then the `pdflatex` command is used
+  (producing PDF output files), otherwise the `latex` command is used
+  (producing DVI output files).  Thus, if necessary, a symbolic link, e.g.
+  `latex.sh`, may be created to use the script easily.
 
-**Arch Linux** users can use tdi's `AUR package
+**Arch Linux** users may use `tdi <https://github.com/tdi>`_'s `AUR package
 <http://aur.archlinux.org/packages.php?ID=55739>`_ to obtain the script.
+
+**OS X** users need to install GNU grep, i.e., ``ggrep``, which is required for
+the script to work correctly.
 
 Options
 =======
 ``-2x1 FILE``
-  Put two pages of the PDF FILE on a single A4 sheet (the output will be in
+  Put two pages of the PDF FILE on a single A4 sheet (the output will be in a
   FILE-nup.pdf file).
 ``-2x2 FILE``
-  Put four pages of the PDF FILE on a single A4 sheet (the output will be in
+  Put four pages of the PDF FILE on a single A4 sheet (the output will be in a
   FILE-nup.pdf file).
 ``+3``
   Run ``latex``/``pdflatex`` thrice (default is twice).
@@ -73,51 +77,56 @@ Options
 ``-rd DIR``
   Convert DIA images in directory DIR recursively.
 ``-h``
-  Print help message and exit.
+  Print the help message and exit.
 ``+h``
-  Make handout from beamer presentation, i.e. without  overlays, pauses, and
-  other Beamer effects (the output will be in FILE-handout.pdf file).
+  Make a handout from a beamer presentation -- without overlays, pauses, and
+  other Beamer effects (the output will be in a FILE-handout.pdf file).
 ``-i FILE``
   Make ONLY index (MakeIndex).
 ``+i``
   Make ALSO index (MakeIndex).
 ``-k FILE``
-  Run ``chktex`` command (if available).
+  Run the ``chktex`` command (if available).
 ``-kk FILE``
   The same as '``-k``' but only errors are shown.
 ``-l [WIDTH] FILE``
-  Check maximum line width (by default ``WIDTH=80``).
+  Check if the length of each line in FILE does not exceed the given width (by
+  default ``WIDTH=80``)
 ``-n FILE``
   Check non-breaking spaces.
 ``-s FILE``
   Check sentence separators.
 ``+s``
-  Print a summary of problems (errors and warnings) after compilation.
+  Print a summary of problems (errors and warnings) after the compilation.
 ``-ss FILE``
   STRICTLY check sentence separators.
 ``-sc [LANG] FILE``
-  Run interactive spell checker (by default ``LANG="en_GB"`` and UTF-8 encoding
-  is used).
+  Start the interactive ``aspell`` spell checker (by default ``LANG="en_GB"``
+  and UTF-8 encoding is used).
 ``+sync``
-  Enable synchronization between source file and the resulting DVI or PDF file.
+  Enable the synchronization between the source file and the resulting DVI or
+  PDF file.  (About the option see also `"Direct and reverse synchronization
+  with SyncTEX" <http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf>`_.)
 ``+o``
-  Open PDF (or DVI) file after compilation.
+  Open the resulting PDF (or DVI) file after the compilation.
 ``+p``
   Use ``ps4pdf`` instead of ``pdflatex``/``latex`` (PSTricks).
 ``-V``
-  Print script version.
+  Print the script version.
 
-(About `+sync` option see also `"Direct and reverse synchronization with
-SyncTEX" <http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf>`_.)
 
 Examples
 ========
-* Compile ``file.tex`` source file::
+* Compile a (La)TeX source file named ``file.tex`` (this example shows also the
+  script's output messages)::
 
     $ pdflatex.sh file.tex
+    PDFLATEX...                         [done]
+    PDFLATEX...                         [done]
+    CLEANUP.....................        [done]
 
-* Compile ``file.tex`` with BibTeX and MakeIndex, and open PDF browser with the
-  output file after compilation::
+* Compile ``file.tex`` with BibTeX and MakeIndex, and open a PDF browser with
+  the output file after the compilation::
 
     $ pdflatex.sh +b +i +o file.tex
 
@@ -125,13 +134,13 @@ Examples
 
     $ pdflatex.sh +p file.tex
 
-* Compile ``beamer-presentation.tex`` beamer presentation file and make a
-  handout of it (the output should be in ``beamer-presentation-handout.pdf``
-  file)::
+* Compile a beamer presentation file named ``beamer-presentation.tex`` and make
+  a handout of it (the output should be in a file named
+  ``beamer-presentation-handout.pdf``)::
 
     $ pdflatex.sh +h beamer-presentation.tex
 
-* Run ``chktex`` command but show only errors::
+* Run the ``chktex`` command, but show errors only::
 
     $ pdflatex.sh -kk file.tex
 
@@ -140,19 +149,15 @@ Examples
 
     $ pdflatex.sh -gs img/
 
-* Put two pages of the ``file.pdf`` on a single A4 sheet (the output should be
-  in ``FILE-nup.pdf`` file)::
+* Put two pages of a file named ``file.pdf`` on a single A4 sheet (the output
+  should be in a file named ``file-nup.pdf``)::
 
     $ pdflatex.sh -2x1 file.pdf
 
 
-Reporting Bugs
-==============
-Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
-
 Copyright
 =========
-| (c) 2007-2012 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+| (c) 2007-2014 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 |
 | This program comes with ABSOLUTELY NO WARRANTY.
 | THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE TERMS

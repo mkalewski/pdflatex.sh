@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UTF-8
 
-#  (c) 2007-2012 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+#  (c) 2007-2014 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 #
 #  This program comes with ABSOLUTELY NO WARRANTY.
 #  THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.1.4
+VERSION=3.2.0
 
 
 # PROGRAMS
@@ -102,6 +102,17 @@ txtcyn=$(tput setaf 6)  # cyan
 txtwht=$(tput setaf 7)  # white
 txtrst=$(tput sgr0)     # text reset
 
+# OS X adjustments:
+GREP="grep"
+if [[ $OSTYPE == *darwin* ]] ; then
+  # PDF viewer
+  if [[ $PDF_VIEWER_PROGRAM == "evince" ]] ; then
+    PDF_VIEWER_PROGRAM="open"
+  fi
+  # Use GNU grep (i.e., ggrep) instead of BSD grep
+  GREP="ggrep"
+fi
+
 
 # FUNCTIONS
 # =========
@@ -110,16 +121,16 @@ txtrst=$(tput sgr0)     # text reset
 function print_help() {
 cat <<EOF
 
-${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2012\
+${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2014\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
         ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX FILES COMPILATION AND\
  MORE${txtrst}
 
-NOTE:  If the script is run as 'pdflatex.sh' then 'pdflatex' command is used
-(producing PDF output file), otherwise 'latex' command is used (producing DVI
-output file).  Thus if necessary, the 'latex.sh' symbolic link can be created
-to use the script easily.
+NOTE:  If the script is run as 'pdflatex.sh', then the 'pdflatex' command is
+       used (producing PDF output files), otherwise the 'latex' command is used
+       (producing DVI output files).  Thus, if necessary, a symbolic link, e.g.
+       'latex.sh', may be created to use the script easily.
 
 ${txtbld}For more information, please visit${txtrst}:  \
 <https://github.com/mkalewski/pdflatex.sh>
@@ -143,9 +154,9 @@ ${txtbld}Usage${txtrst}:
 
 ${txtbld}Options${txtrst}:
   -2x1 FILE            put two pages of the PDF FILE on a single A4 sheet
-                       (the output will be in FILE-nup.pdf file)
+                       (the output will be in a FILE-nup.pdf file)
   -2x2 FILE            put four pages of the PDF FILE on a single A4 sheet
-                       (the output will be in FILE-nup.pdf file)
+                       (the output will be in a FILE-nup.pdf file)
   +3                   run 'latex'/'pdflatex' thrice (default is twice)
   -b   FILE            make ONLY BibTeX
   +b                   make ALSO BibTeX
@@ -155,26 +166,28 @@ ${txtbld}Options${txtrst}:
   -gd  DIR             convert DIA images in directory DIR
   -rd  DIR             convert DIA images in directory DIR recursively
   -h                   print (this) help message and exit
-  +h                   make handout from beamer presentation, i.e. without
+  +h                   make a handout from a beamer presentation, i.e., without
                        overlays, pauses, and other Beamer effects (the output
-                       will be in FILE-handout.pdf file)
+                       will be in a FILE-handout.pdf file)
   -i   FILE            make ONLY index (MakeIndex)
   +i                   make ALSO index (MakeIndex)
-  -k   FILE            run 'chktex' command (if available)
+  -k   FILE            run the 'chktex' command (if available)
   -kk  FILE            the same as '-k' but only errors are shown
-  -l   [WIDTH] FILE    check maximum line width (by default WIDTH=80)
+  -l   [WIDTH] FILE    check if the length of each line in FILE does not exceed
+                       the given width (by default WIDTH=80)
   -n   FILE            check non-breaking spaces
   -s   FILE            check sentence separators
   +s                   print a summary of problems (errors and warnings) after
-                       compilation
+                       the compilation
   -ss  FILE            STRICTLY check sentence separators
-  -sc  [LANG] FILE     run interactive spell checker (by default LANG="en_GB"
-                       and UTF-8 encoding is used)
-  +sync                enable synchronization between source file and the
-                       resulting DVI or PDF file
-  +o                   open PDF (or DVI) file after compilation
+  -sc  [LANG] FILE     start the interactive 'aspell' spell checker (by default
+                       LANG="en_GB" and UTF-8 encoding is used)
+  +sync                enable the synchronization between the source file and
+                       the resulting DVI or PDF file
+  +o                   open the resulting PDF (or DVI) file after the
+                       compilation
   +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
-  -V                   print script version
+  -V                   print the script version
 
 ${txtbld}Examples${txtrst}:
   pdflatex.sh file.tex
@@ -210,7 +223,7 @@ function die() {
   mquit 1
 }
 
-# Checks programs in the system
+# Checks programs availability in the system
 function check_programs() {
   for PROGRAMNAME in $1 ; do
     local FILEPATH=`eval which $PROGRAMNAME 2>&-`
@@ -280,10 +293,10 @@ function pdf_manipulation() {
   if [[ -z $1 || -z $2 ]] ; then
     die "${txtylw}Too few arguments.${txtrst}"
   fi
-  check_programs "$PDFNUP_PROGRAM"
+  check_programs "$PDFNUP_PROGRAM $GREP"
   echo -ne "${txtund}PDFJAM${txtrst}..."
   local ERR=`eval $PDFNUP_PROGRAM --nup $1 $PDFNUP_OPT $2 2>&1`
-  local ERR=`echo $ERR | grep -i error`
+  local ERR=`echo $ERR | $GREP -i error`
   if [[ -n $ERR ]] ; then
     echo -e\
       "\t\t\t\t${txtred}[done]  ${txtbld}(With errors!  No output?)${txtrst}"
@@ -309,9 +322,9 @@ function line_width() {
   if [[ ! -e $FILENAME ]] ; then
     die "Source file ${txtylw}$FILENAME${txtrst} missing."
   fi
-  while read LINE ; do
+  while read -r LINE ; do
     LINE_NUMBER=$(($LINE_NUMBER+1))
-    CHARS=`echo $LINE | wc -m`
+    CHARS=`echo -n "$LINE" | wc -m | tr -d ' '`
     if [[ $CHARS -gt $WIDTH ]] ; then
       echo -e "${txtbld}$LINE_NUMBER${txtrst}:\t$CHARS"
     fi
@@ -328,10 +341,12 @@ function hardspaces() {
   if [[ ! -e $FILE.tex ]] ; then
     die "Source file ${txtylw}$FILE.tex${txtrst} missing."
   fi
-  grep -n\
-  "\( [^ ] \)\|\( [^ ]$\)\|\(^[^ ] \)\|\( \$.\$ \)\|\( \$.\$$\)\|\(^\$.\$ \)"\
-  "$FILE.tex"\
-  | sort | uniq | sort -n | sed "s/:/\t/" | grep -P -v "^[0-9]+\t%"
+  check_programs "$GREP"
+  local EXP="\( [^ ] \)\|\( [^ ]$\)\|\(^[^ ] \)\|\( \$.\$ \)\|\( \$.\$$\)\|\(^\$.\$ \)"
+  $GREP -n "$EXP"  "$FILE.tex"\
+  | sort | uniq | sort -n | awk -F: -v a=${txtbld} -v b=${txtrst}\
+    '{printf "%s%s%s%s\t%s\n", a, $1, b, ":", $2}'\
+  | $GREP -P -v "^[0-9]+\t%"
 }
 
 # Checks sentences and periods
@@ -343,14 +358,15 @@ function sentences() {
   if [[ ! -e $FILE.tex ]] ; then
     die "Source file ${txtylw}$FILE.tex${txtrst} missing."
   fi
+  check_programs "$GREP"
   local EXP="\(^\.\)\|\([ ]\.[ ]\)\|\([ ]\.\)\|\(\.[ ][^ ]\)"
   if [[ $1 == "strict" ]] ; then
     local EXP=$EXP"\|\([^\.][ ]+[[:upper:]]\)\|\(\.[^ \\;:]\)"
   fi
-  grep -n "$EXP"\
-  "$FILE.tex"\
-  | sort | uniq | sort -n | sed "s/:/\t/" | grep -P -v "^[0-9]+\t%"\
-  | grep "\." --color=auto
+  $GREP -n "$EXP" "$FILE.tex"\
+  | sort | uniq | sort -n | awk -F: -v a=${txtbld} -v b=${txtrst}\
+    '{printf "%s%s%s%s\t%s\n", a, $1, b, ":", $2}'\
+  | $GREP -P -v "^[0-9]+\t%" | $GREP "\." --color=auto
 }
 
 # Runs spell checker (aspell)
@@ -363,7 +379,8 @@ function spell_checker() {
     die "Source file ${txtylw}$FILENAME.tex${txtrst} missing."
   fi
   $DETEX_PROGRAM "$FILENAME.tex" > "$FILENAME-tmp.txt" || die
-  $ASPELL_PROGRAM $ASPELLOPT -c "$FILENAME-tmp.txt" 2>&- || die
+  $ASPELL_PROGRAM $ASPELLOPT -c "$FILENAME-tmp.txt" 2>&- ||\
+    { rm "$FILENAME-tmp.txt" ; die ; }
   rm "$FILENAME-tmp.txt" || die
   if [[ -e $FILENAME-tmp.txt.new ]] ; then
     rm "$FILENAME-tmp.txt.new"  || die
@@ -377,6 +394,7 @@ function spell_checker() {
 
 # Runs (pdf)latex
 function run_pdflatex() {
+  check_programs "$GREP"
   echo -ne "$TEXT..."
   if [[ -n $APPENDSYNCTEX ]] ; then
     $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
@@ -384,7 +402,10 @@ function run_pdflatex() {
   else
     $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
   fi
-  local ERR=`grep -i error "$FILENAME".log | grep -v -i infwarerr`
+  local ERR=`$GREP -i error "$FILENAME".log | $GREP -v -i infwarerr`
+  if [[ -z $ERR ]] ; then
+    local ERR=`$GREP -i "^\!" "$FILENAME".log`
+  fi
   if [[ -n $ERR ]] ; then
     echo -ne "\t\t\t\t${txtred}[done]"
     if [[ -n $USEPS4PDFARG ]] ; then
@@ -501,11 +522,11 @@ for X in `seq 1 $THRICE` ; do run_pdflatex ; done
 
 # Bibtex
 if [[ -n $MAKEBIBTEXARG || -n $MAKEONLYBIBTEXARG ]] ; then
-  check_programs "$BIBTEX_PROGRAM"
+  check_programs "$BIBTEX_PROGRAM $GREP"
   echo -ne "${txtund}BIBTEX${txtrst}..."
   rm -f "$FILENAME-bibtex.log" >&- 2>&-  # old BibTeX log file
   BIBOUT=`$BIBTEX_PROGRAM "$FILENAME" 2>&-`
-  BIBERR=`echo $BIBOUT | egrep -i "error|warning"`
+  BIBERR=`echo $BIBOUT | $GREP -E -i "error|warning"`
   if [[ -n $BIBERR ]] ; then
     echo "$BIBOUT" > $FILENAME-bibtex.log
     echo -ne "\t\t\t\t${txtred}[done]"
@@ -552,10 +573,11 @@ for X in `seq 1 $THRICE` ; do
     if [[ ! -e $FILENAME.tex ]] ; then
       die "Source file ${txtylw}$FILENAME${txtrst} missing."
     fi
+    check_programs "$GREP"
     echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
     $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
     ERR=\
-      `egrep -i "error|emergency stop" "$FILENAME".log | grep -v -i infwarerr`
+      `$GREP -E -i "error|emergency stop" "$FILENAME".log | $GREP -v -i infwarerr`
     if [[ -n $ERR ]] ; then
       echo -ne "${txtred}[done]"
       echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
@@ -577,10 +599,11 @@ done
 
 # Problems summary (part 1 of 2)
 if [[ -n $SHOWSUMMARY ]] ; then
-  ERRORSNUM=`grep -c -i "^\!" "$FILENAME".log`
-  ERRORS=`grep -A2 -i "^\!" "$FILENAME".log`
-  WARNINGS=`grep -i warning "$FILENAME".log | grep -v -i infwarerr`
-  WARNINGSNUM=`echo "$WARNINGS" | grep -c -i warning`
+  check_programs "$GREP"
+  ERRORSNUM=`$GREP -c -i "^\!" "$FILENAME".log`
+  ERRORS=`$GREP -A2 -i "^\!" "$FILENAME".log`
+  WARNINGS=`$GREP -A2 -i warning "$FILENAME".log | $GREP -v -i infwarerr`
+  WARNINGSNUM=`echo "$WARNINGS" | $GREP -c -i warning`
 fi
 
 # Cleanup
@@ -612,13 +635,15 @@ if [[ -n $SHOWSUMMARY && ( $ERRORSNUM > 0 || $WARNINGSNUM > 0 ) ]] ; then
   echo \
     "${txtund}${txtbld}SUMMARY:                                      ${txtrst}"
   if [[ $ERRORSNUM > 0 ]] ; then
-    echo -e "${txtcyn}${txtbld}Errors ($ERRORSNUM):${txtrst}"
-    echo "$ERRORS" | grep -A2 -i "^\!" --color=auto
+    echo -e "${txtblu}${txtbld}Errors ($ERRORSNUM):${txtrst}"
+    echo "$ERRORS" | $GREP -E -v "^[[:space:]]*$" |\
+      $GREP -A2 -i "^\!" --color=auto
     echo "______________________________________________"
   fi
   if [[ $WARNINGSNUM > 0 ]] ; then
-    echo -e "${txtblu}${txtbld}Warnings ($WARNINGSNUM):${txtrst}"
-    echo "$WARNINGS" | grep -i "warning"  --color=auto
+    echo -e "${txtcyn}${txtbld}Warnings ($WARNINGSNUM):${txtrst}"
+    echo "$WARNINGS" | $GREP -E -v "^[[:space:]]*$" |\
+      $GREP -A2 -i "warning"  --color=auto
   fi
 fi
 
