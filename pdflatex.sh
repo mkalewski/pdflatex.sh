@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.2.0
+VERSION=3.3.0
 
 
 # PROGRAMS
@@ -48,6 +48,7 @@ DIA_PROGRAM="dia"
 INKSCAPE_PROGRAM="inkscape"
 LATEX_PROGRAM="latex"
 MAKEINDEX_PROGRAM="makeindex"
+MAKEGLOSSARIES_PROGRAM="makeglossaries"
 PDF_VIEWER_PROGRAM="evince"
 PDFLATEX_PROGRAM="pdflatex"
 PDFNUP_PROGRAM="pdfnup"
@@ -77,7 +78,7 @@ OUTPUT_DIRECTORY=
 
 # Extensions of auxiliary files:
 AUXILIARYEXTS=\
-"aux idx ilg ind out toc lot lof loa nav snm vrb bbl blg svn"
+"aux idx ilg ind out toc lot lof loa nav snm vrb bbl blg svn acn acr alg glsdefs ist"
   #  + " log dvi synctex.gz"
 AUXILIARYEXTS_BIBTEX=\
 "aux idx ilg ind out toc lot lof loa nav snm vrb blg svn dvi pdf synctex.gz"
@@ -85,6 +86,8 @@ AUXILIARYEXTS_BIBTEX=\
 AUXILIARYEXTS_INDEX=\
 "aux ilg ind out toc lot lof loa nav snm vrb bbl blg svn dvi log pdf synctex.gz"
   #  + " idx"
+AUXILIARYEXTS_GLOSSARIES=\
+"aux ilg ind out toc lot lof loa nav snm vrb bbl blg svn dvi log pdf synctex.gz acn acr alg glsdefs ist"
 
 # Base name of the script:
 THENAME="$(basename $0)"
@@ -148,7 +151,7 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -gs | -rs | -gd | -rd  DIR
     Convert images.
 
-  pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
+  pdflatex.sh  -b | -c | -i | -g | -k | -kk | -l [WIDTH] | -n | -s | -ss
                  | -sc [LANG]  FILE(.tex)
     Miscellaneous operations.
 
@@ -171,6 +174,8 @@ ${txtbld}Options${txtrst}:
                        will be in a FILE-handout.pdf file)
   -i   FILE            make ONLY index (MakeIndex)
   +i                   make ALSO index (MakeIndex)
+  -g   FILE            make ONLY glossaries (MakeGlossaries)
+  +g                   make ALSO glossaries (MakeGlossaries)
   -k   FILE            run the 'chktex' command (if available)
   -kk  FILE            the same as '-k' but only errors are shown
   -l   [WIDTH] FILE    check if the length of each line in FILE does not exceed
@@ -251,7 +256,7 @@ function cleanup() {
     rm -f *-pics.* >&- 2>&-
     echo -ne "."
   fi
-  echo -e "\t\t${txtgrn}[done]${txtrst}"
+  echo -e "\t${txtgrn}[done]${txtrst}"
 }
 
 # Converts SVG & DIA images
@@ -454,6 +459,8 @@ while [[ -n $1 ]] ; do
     +h)     MAKEHANDOUT="true" ; shift ;;
     +i)     MAKEINDEXARG="true" ; shift ;;
     -i)     MAKEONLYINDEXARG="true" ; shift ; break ;;
+    +g)     MAKEGLOSSARIESARG="true" ; shift ;;
+    -g)     MAKEONLYGLOSSARIESARG="true" ; shift ; break ;;
     -k)     CHKTEX="true" ; shift ; break ;;
     -kk)    CHKTEX_OPT="$CHKTEX_OPT -n all" ; \
             CHKTEX="true" ; shift ; break ;;
@@ -559,6 +566,20 @@ if [[ -n $MAKEINDEXARG || -n $MAKEONLYINDEXARG ]] ; then
 fi
 if [[ -n $MAKEONLYINDEXARG ]] ; then
   AUXILIARYEXTS=$AUXILIARYEXTS_INDEX
+  cleanup "$FILENAME"
+  mquit $?
+fi
+
+# Glossary
+if [[ -n $MAKEGLOSSARIESARG || -n $MAKEONLYGLOSSARIESARG ]] ; then
+  check_programs "$MAKEGLOSSARIES_PROGRAM"
+  echo -ne "${txtund}MAKEGLOSSARIES${txtrst}...\t\t\t"
+  $MAKEGLOSSARIES_PROGRAM -q "$FILENAME" 2>&- || die
+  echo "${txtgrn}[done]${txtrst}"
+  run_pdflatex
+fi
+if [[ -n $MAKEONLYGLOSSARIESARG ]] ; then
+  AUXILIARYEXTS=$AUXILIARYEXTS_GLOSSARIES
   cleanup "$FILENAME"
   mquit $?
 fi

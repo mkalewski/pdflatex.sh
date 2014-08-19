@@ -3,7 +3,7 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Version: 3.2.0
+:Version: 3.3.0
 :License: MIT License
 :Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
@@ -16,7 +16,7 @@ Synopsis
   pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
   pdflatex.sh  -gs | -rs | -gd | -rd  DIR
-  pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
+  pdflatex.sh  -b | -c | -i | -g | -k | -kk | -l [WIDTH] | -n | -s | -ss
                | -sc [LANG]  FILE(.tex)
 
 Description
@@ -85,6 +85,10 @@ Options
   Make ONLY index (MakeIndex).
 ``+i``
   Make ALSO index (MakeIndex).
+``-g FILE``
+  Make ONLY glossaries (MakeGlossaries).
+``+g``
+  Make ALSO glossaries (MakeGlossaries).
 ``-k FILE``
   Run the ``chktex`` command (if available).
 ``-kk FILE``
