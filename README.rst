@@ -3,7 +3,7 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Version: 3.2.0
+:Version: 3.3.0
 :License: MIT License
 :Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
@@ -13,15 +13,16 @@ Synopsis
 ::
 
   pdflatex.sh  -h | -V
-  pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
   pdflatex.sh  -gs | -rs | -gd | -rd  DIR
-  pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-               | -sc [LANG]  FILE(.tex)
+  pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
+               | -ss | -sc [LANG]  FILE(.tex)
 
 Description
 ===========
-A bash script to simplify (La)TeX files compilation with BibTeX, indices,
+A bash script to simplify TeX, LaTeX, and XeLaTeX files compilation with
+bibliographies (BibTeX), glossaries (MakeGlossaries), indices (MakeIndex),
 PSTricks, and more.  In the simplest case, the script is run as follows::
 
   $ pdflatex.sh file.tex
@@ -39,12 +40,18 @@ options_ and examples_).
 It is possible to customize the programs (like PDF viewer), which are used by
 the script in the **Programs** and **Options** sections in the source code.
 
-.. note::
+Note
+----
 
-  If the script is run as `pdflatex.sh`, then the `pdflatex` command is used
-  (producing PDF output files), otherwise the `latex` command is used
-  (producing DVI output files).  Thus, if necessary, a symbolic link, e.g.
-  `latex.sh`, may be created to use the script easily.
+If the script is run as `pdflatex.sh`, then the `pdflatex` command is used
+(producing PDF output files).  However, if the script is run as `latex.sh`,
+then the `latex` command is used (producing DVI output files), and if the
+script is run as `xelatex.sh`, then the `xelatex` command is used (producing
+PDF output files).  Thus, if necessary, symbolic links may be created to use
+the script easily, e.g.::
+
+  $ ln -s ./pdflatex.sh ./latex.sh
+  $ ln -s ./pdflatex.sh ./xelatex.sh
 
 **Arch Linux** users may use `tdi <https://github.com/tdi>`_'s `AUR package
 <http://aur.archlinux.org/packages.php?ID=55739>`_ to obtain the script.
@@ -68,6 +75,10 @@ Options
   Make ALSO BibTeX.
 ``-c FILE``
   Cleanup: remove auxiliary files.
+``-g FILE``
+  Make ONLY glossaries (MakeGlossaries).
+``+g``
+  Make ALSO glossaries (MakeGlossaries).
 ``-gs DIR``
   Convert SVG images in directory DIR.
 ``-rs DIR``
@@ -125,10 +136,10 @@ Examples
     PDFLATEX...                         [done]
     CLEANUP.....................        [done]
 
-* Compile ``file.tex`` with BibTeX and MakeIndex, and open a PDF browser with
-  the output file after the compilation::
+* Compile ``file.tex`` with BibTeX, MakeGlossaries, and MakeIndex, and open a
+  PDF browser with the output file after the compilation::
 
-    $ pdflatex.sh +b +i +o file.tex
+    $ pdflatex.sh +b +g +i +o file.tex
 
 * Compile ``file.tex`` with the use of PSTricks::
 
@@ -144,10 +155,10 @@ Examples
 
     $ pdflatex.sh -kk file.tex
 
-* Convert all SVG images in directory ``img/`` (PDF and PS files will be
-  produced)::
+* Convert all SVG images in directory ``images/`` (PDF and PS files will be
+  produced within that directory)::
 
-    $ pdflatex.sh -gs img/
+    $ pdflatex.sh -gs images/
 
 * Put two pages of a file named ``file.pdf`` on a single A4 sheet (the output
   should be in a file named ``file-nup.pdf``)::

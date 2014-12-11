@@ -14,15 +14,15 @@
 #
 #  SYNOPSIS
 #    pdflatex.sh  -h | -V
-#    pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
+#    pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
 #    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
-#    pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-#                 | -sc [LANG]  FILE(.tex)
+#    pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
+#                 | -ss | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
-#    A bash script to simplify TeX/LaTeX files compilation and more.  Just run
-#    the script to get more information: './pdflatex.sh'.
+#    A bash script to simplify TeX/LaTeX/XeLaTeX files compilation and more.
+#    Just run the script to get more information: './pdflatex.sh'.
 #
 #  REPORTING BUGS
 #    <https://github.com/mkalewski/pdflatex.sh/issues>
@@ -30,11 +30,11 @@
 #  THE OFFICIAL CODE REPOSITORY
 #    <https://github.com/mkalewski/pdflatex.sh>
 #
-#  (Below, you can customize your settings.)
+#  (Below, you may customize your settings.)
 
 # VERSION
 # =======
-VERSION=3.2.0
+VERSION=3.3.0
 
 
 # PROGRAMS
@@ -48,10 +48,12 @@ DIA_PROGRAM="dia"
 INKSCAPE_PROGRAM="inkscape"
 LATEX_PROGRAM="latex"
 MAKEINDEX_PROGRAM="makeindex"
+MAKEGLOSSARIES_PROGRAM="makeglossaries"
 PDF_VIEWER_PROGRAM="evince"
 PDFLATEX_PROGRAM="pdflatex"
 PDFNUP_PROGRAM="pdfnup"
 PS4PDF_PROGRAM="ps4pdf"
+XELATEX_PROGRAM="xelatex"
 
 
 # OPTIONS
@@ -64,6 +66,7 @@ LATEX_BATCHMODE_OPT="-interaction batchmode"
 PDFLATEX_SYNCTEX_OPT="-synctex=1"
 PDFNUP_OPT="--paper a4paper --frame true --scale 0.96 --delta \"2mm 2mm\""
 PS4PDF_LATEX_OPT="\AtBeginDocument{\RequirePackage{pst-pdf}}"
+MAKEGLOSSARIES_OPT="-q"
 
 
 # FILE TO BUILD
@@ -76,15 +79,12 @@ OUTPUT_DIRECTORY=
 # =====
 
 # Extensions of auxiliary files:
-AUXILIARYEXTS=\
-"aux idx ilg ind out toc lot lof loa nav snm vrb bbl blg svn"
-  #  + " log dvi synctex.gz"
-AUXILIARYEXTS_BIBTEX=\
-"aux idx ilg ind out toc lot lof loa nav snm vrb blg svn dvi pdf synctex.gz"
-  #  + " log bbl"
-AUXILIARYEXTS_INDEX=\
-"aux ilg ind out toc lot lof loa nav snm vrb bbl blg svn dvi log pdf synctex.gz"
-  #  + " idx"
+AUXILIARYEXTS_COMMON=\
+"acn acr alg aux blg glg glo glsdefs idx ilg ist loa lof lot nav out snm svn toc vrb"
+AUXILIARYEXTS="$AUXILIARYEXTS_COMMON bbl gls ind"
+AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_COMMON dvi gls ind pdf synctex.gz"
+AUXILIARYEXTS_INDEX="$AUXILIARYEXTS_COMMON bbl div gls pdf synctex.gz"
+AUXILIARYEXTS_GLOSSARIES="$AUXILIARYEXTS_COMMON bbl div ind pdf synctex.gz"
 
 # Base name of the script:
 THENAME="$(basename $0)"
@@ -124,13 +124,15 @@ cat <<EOF
 ${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2014\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
-        ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX FILES COMPILATION AND\
- MORE${txtrst}
+    ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX FILES COMPILATION\
+ AND MORE${txtrst}
 
 NOTE:  If the script is run as 'pdflatex.sh', then the 'pdflatex' command is
-       used (producing PDF output files), otherwise the 'latex' command is used
-       (producing DVI output files).  Thus, if necessary, a symbolic link, e.g.
-       'latex.sh', may be created to use the script easily.
+       used (producing PDF output files).  However, if the script is run as
+       'latex.sh', then the 'latex' command is used (producing DVI output
+       files), and if the script is run as 'xelatex.sh', then the 'xelatex'
+       command is used (producing PDF output files).  Thus, if necessary,
+       symbolic links may be created to use the script easily.
 
 ${txtbld}For more information, please visit${txtrst}:  \
 <https://github.com/mkalewski/pdflatex.sh>
@@ -139,7 +141,7 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -h | -V
     Print help or version.
 
-  pdflatex.sh  [ +3 +b +h +i +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
     Compile (La)TeX files.
 
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
@@ -148,8 +150,8 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -gs | -rs | -gd | -rd  DIR
     Convert images.
 
-  pdflatex.sh  -b | -c | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
-                 | -sc [LANG]  FILE(.tex)
+  pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
+               | -sc [LANG]  FILE(.tex)
     Miscellaneous operations.
 
 ${txtbld}Options${txtrst}:
@@ -161,6 +163,8 @@ ${txtbld}Options${txtrst}:
   -b   FILE            make ONLY BibTeX
   +b                   make ALSO BibTeX
   -c   FILE            cleanup (remove auxiliary files)
+  -g   FILE            make ONLY glossaries (MakeGlossaries)
+  +g                   make ALSO glossaries (MakeGlossaries)
   -gs  DIR             convert SVG images in directory DIR
   -rs  DIR             convert SVG images in directory DIR recursively
   -gd  DIR             convert DIA images in directory DIR
@@ -191,7 +195,8 @@ ${txtbld}Options${txtrst}:
 
 ${txtbld}Examples${txtrst}:
   pdflatex.sh file.tex
-  pdflatex.sh +b +i +o file.tex
+  pdflatex.sh +o file.tex
+  pdflatex.sh +b +g +i file.tex
   pdflatex.sh +p file.tex
   pdflatex.sh +h beamer-presentation.tex
   pdflatex.sh -kk file.tex
@@ -239,7 +244,9 @@ function cleanup() {
     die "${txtylw}Too few arguments.${txtrst}"
   fi
   echo -ne "CLEANUP..."
-  for EXTENSION in $AUXILIARYEXTS ; do
+  local EXTENSIONS=$(echo "$AUXILIARYEXTS" | tr " " "\n" | sort | uniq | tr "\n" " ")
+  local EXTENSIONS=${EXTENSIONS% }
+  for EXTENSION in $EXTENSIONS ; do
     if [[ $EXTENSION == "-bibtex.log" ]] ; then
       rm -f "${1%.tex}-bibtex.log" >&- 2>&-
     else
@@ -251,7 +258,7 @@ function cleanup() {
     rm -f *-pics.* >&- 2>&-
     echo -ne "."
   fi
-  echo -e "\t\t${txtgrn}[done]${txtrst}"
+  echo -e "\t${txtgrn}[done]${txtrst}"
 }
 
 # Converts SVG & DIA images
@@ -415,6 +422,8 @@ function run_pdflatex() {
     fi
   else
     AUXILIARYEXTS="$AUXILIARYEXTS log"
+    AUXILIARYEXTS_INDEX="$AUXILIARYEXTS_INDEX log"
+    AUXILIARYEXTS_GLOSSARIES="$AUXILIARYEXTS_GLOSSARIES log"
     echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
   fi
 }
@@ -443,8 +452,10 @@ while [[ -n $1 ]] ; do
     +3)     THRICE="2" ; shift ;;
     +b)     MAKEBIBTEXARG="true" ; shift ;;
     -b)     MAKEONLYBIBTEXARG="true" ; shift ; break ;;
-    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi synctex.gz -bibtex.log" ; \
+    -c)     AUXILIARYEXTS="$AUXILIARYEXTS log dvi synctex.gz -bibtex.log bbl gls ind" ; \
             cleanup "$2"; exit 0 ;;
+    +g)     MAKEGLOSSARIESARG="true" ; shift ;;
+    -g)     MAKEONLYGLOSSARIESARG="true" ; shift ; break ;;
     -gs)    CONVERTIMGARG="svg" ; shift ; convert_images "$@" ; break ;;
     -rs)    CONVERTIMGRARG="svg" ; shift ; convert_images "$@" ; break ;;
     -gd)    CONVERTIMGARG="dia" ; shift ; convert_images "$@" ; break ;;
@@ -504,9 +515,11 @@ if [[ -n $CHKTEX ]] ; then
   mquit $?
 fi
 
-# Command to use: 'latex' or 'pdflatex':
+# Command to use: 'latex', 'pdflatex', or 'xelatex':
 if [[ $THENAME == "latex.sh" ]] ; then
   LATEX_PROGRAM=$LATEX_PROGRAM
+elif [[ $THENAME == "xelatex.sh" ]] ; then
+  LATEX_PROGRAM=$XELATEX_PROGRAM
 else
   LATEX_PROGRAM=$PDFLATEX_PROGRAM
 fi
@@ -543,6 +556,26 @@ if [[ -n $MAKEONLYBIBTEXARG ]] ; then
   mquit $?
 fi
 
+# Glossary
+GLOSSARYFILENAME="$FILENAME.glo"
+if [[ -n $MAKEGLOSSARIESARG || -n $MAKEONLYGLOSSARIESARG ]] ; then
+  check_programs "$MAKEGLOSSARIES_PROGRAM"
+  if [[ -e $GLOSSARYFILENAME ]] ; then
+    echo -ne "${txtund}MAKEGLOSSARIES${txtrst}...\t\t\t"
+    $MAKEGLOSSARIES_PROGRAM $MAKEGLOSSARIES_OPT "$GLOSSARYFILENAME" 2>&- || die
+    echo "${txtgrn}[done]${txtrst}"
+    run_pdflatex
+  else
+    echo -ne "Glossary file \"${txtylw}$GLOSSARYFILENAME${txtrst}\" missing."
+    echo "  Skipping glossary..."
+  fi
+fi
+if [[ -n $MAKEONLYGLOSSARIESARG ]] ; then
+  AUXILIARYEXTS=$AUXILIARYEXTS_GLOSSARIES
+  cleanup "$FILENAME"
+  mquit $?
+fi
+
 # Index
 INDEXFILENAME="$FILENAME.idx"
 if [[ -n $MAKEINDEXARG || -n $MAKEONLYINDEXARG ]] ; then
@@ -554,7 +587,7 @@ if [[ -n $MAKEINDEXARG || -n $MAKEONLYINDEXARG ]] ; then
     run_pdflatex
   else
     echo -ne "Index file \"${txtylw}$INDEXFILENAME${txtrst}\" missing."
-    echo "  Skiping index..."
+    echo "  Skipping index..."
   fi
 fi
 if [[ -n $MAKEONLYINDEXARG ]] ; then
@@ -576,11 +609,11 @@ for X in `seq 1 $THRICE` ; do
     check_programs "$GREP"
     echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
     $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
-    ERR=\
-      `$GREP -E -i "error|emergency stop" "$FILENAME".log | $GREP -v -i infwarerr`
+    ERR=`$GREP -E -i "error|emergency stop" "$FILENAME".log | $GREP -v -i infwarerr`
     if [[ -n $ERR ]] ; then
       echo -ne "${txtred}[done]"
       echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
+      AUXILIARYEXTS=${AUXILIARYEXTS// log}
     else
       echo "${txtgrn}[done]${txtrst}"
       echo -ne "$TEXT...\t\t\t\t"
@@ -609,6 +642,8 @@ fi
 # Cleanup
 if [[ $LATEX_PROGRAM != "latex" ]] ; then
   AUXILIARYEXTS="$AUXILIARYEXTS dvi"
+else
+  AUXILIARYEXTS="$AUXILIARYEXTS pdf"
 fi
 cleanup "$FILENAME"
 
