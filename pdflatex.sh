@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UTF-8
 
-#  (c) 2007-2014 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+#  (c) 2007-2015 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 #
 #  This program comes with ABSOLUTELY NO WARRANTY.
 #  THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE
@@ -14,7 +14,7 @@
 #
 #  SYNOPSIS
 #    pdflatex.sh  -h | -V
-#    pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
+#    pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
 #    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
 #    pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.3.0
+VERSION=3.3.1
 
 
 # PROGRAMS
@@ -61,6 +61,7 @@ XELATEX_PROGRAM="xelatex"
 ASPELL_ENC_OPT="--encoding=utf-8"
 ASPELL_LANG_OPT="-l en_GB"
 CHKTEX_OPT="-q -v1"
+GREP_COLOR="--color=auto"
 LATEX_BATCHMODE_OPT="-interaction batchmode"
 #LATEX_OUTPUT_DIRECTORY_OPT="-output-directory"
 PDFLATEX_SYNCTEX_OPT="-synctex=1"
@@ -113,6 +114,9 @@ if [[ $OSTYPE == *darwin* ]] ; then
   GREP="ggrep"
 fi
 
+# Disable ! style history substitution:
+set +H
+
 
 # FUNCTIONS
 # =========
@@ -121,7 +125,7 @@ fi
 function print_help() {
 cat <<EOF
 
-${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2014\
+${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2015\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
     ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX FILES COMPILATION\
@@ -141,7 +145,7 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -h | -V
     Print help or version.
 
-  pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
     Compile (La)TeX files.
 
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
@@ -180,17 +184,18 @@ ${txtbld}Options${txtrst}:
   -l   [WIDTH] FILE    check if the length of each line in FILE does not exceed
                        the given width (by default WIDTH=80)
   -n   FILE            check non-breaking spaces
-  -s   FILE            check sentence separators
-  +s                   print a summary of problems (errors and warnings) after
-                       the compilation
-  -ss  FILE            STRICTLY check sentence separators
-  -sc  [LANG] FILE     start the interactive 'aspell' spell checker (by default
-                       LANG="en_GB" and UTF-8 encoding is used)
-  +sync                enable the synchronization between the source file and
-                       the resulting DVI or PDF file
+  +n                   disable output coloring during the compilation
   +o                   open the resulting PDF (or DVI) file after the
                        compilation
   +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
+  -s   FILE            check sentence separators
+  +s                   print a summary of problems (errors and warnings) after
+                       the compilation
+  -sc  [LANG] FILE     start the interactive 'aspell' spell checker (by default
+                       LANG="en_GB" and UTF-8 encoding is used)
+  -ss  FILE            STRICTLY check sentence separators
+  +sync                enable the synchronization between the source file and
+                       the resulting DVI or PDF file
   -V                   print the script version
 
 ${txtbld}Examples${txtrst}:
@@ -214,6 +219,8 @@ if [[ $# -lt 1 ]] ; then print_help ; exit 0 ; fi
 # Quits the script
 function mquit() {
   [[ -z $1 ]] && EXIT_STATUS_CODE=0 || EXIT_STATUS_CODE=$1
+  # enable ! style history substitution:
+  set -H
   # consider the 'source' command:
   if [[ -n $OLDPWD ]] ; then cd - >&- 2>&- ; fi ; echo ; exit $EXIT_STATUS_CODE
 }
@@ -226,6 +233,21 @@ function die() {
     echo "${txtred}Unknown error${txtrst}.  Exiting..."
   fi
   mquit 1
+}
+
+# Disables output coloring
+function disable_colors() {
+  txtund=
+  txtbld=
+  txtred=
+  txtgrn=
+  txtylw=
+  txtblu=
+  txtpur=
+  txtcyn=
+  txtwht=
+  txtrst=
+  GREP_COLOR=
 }
 
 # Checks programs availability in the system
@@ -252,13 +274,11 @@ function cleanup() {
     else
       rm -f "${1%.tex}.$EXTENSION" >&- 2>&-
     fi
-    echo -ne "."
   done
   if [[ -n $USEPS4PDFARG ]] ; then
     rm -f *-pics.* >&- 2>&-
-    echo -ne "."
   fi
-  echo -e "\t${txtgrn}[done]${txtrst}"
+  echo -e "\t\t\t\t${txtgrn}[done]${txtrst}"
 }
 
 # Converts SVG & DIA images
@@ -303,7 +323,7 @@ function pdf_manipulation() {
   check_programs "$PDFNUP_PROGRAM $GREP"
   echo -ne "${txtund}PDFJAM${txtrst}..."
   local ERR=`eval $PDFNUP_PROGRAM --nup $1 $PDFNUP_OPT $2 2>&1`
-  local ERR=`echo $ERR | $GREP -i error`
+  local ERR=`echo $ERR | $GREP -a -i error`
   if [[ -n $ERR ]] ; then
     echo -e\
       "\t\t\t\t${txtred}[done]  ${txtbld}(With errors!  No output?)${txtrst}"
@@ -350,10 +370,10 @@ function hardspaces() {
   fi
   check_programs "$GREP"
   local EXP="\( [^ ] \)\|\( [^ ]$\)\|\(^[^ ] \)\|\( \$.\$ \)\|\( \$.\$$\)\|\(^\$.\$ \)"
-  $GREP -n "$EXP"  "$FILE.tex"\
+  $GREP -a -n "$EXP" "$FILE.tex"\
   | sort | uniq | sort -n | awk -F: -v a=${txtbld} -v b=${txtrst}\
     '{printf "%s%s%s%s\t%s\n", a, $1, b, ":", $2}'\
-  | $GREP -P -v "^[0-9]+\t%"
+  | $GREP -a -P -v "^[0-9]+\t%"
 }
 
 # Checks sentences and periods
@@ -370,10 +390,10 @@ function sentences() {
   if [[ $1 == "strict" ]] ; then
     local EXP=$EXP"\|\([^\.][ ]+[[:upper:]]\)\|\(\.[^ \\;:]\)"
   fi
-  $GREP -n "$EXP" "$FILE.tex"\
+  $GREP -a -n "$EXP" "$FILE.tex"\
   | sort | uniq | sort -n | awk -F: -v a=${txtbld} -v b=${txtrst}\
     '{printf "%s%s%s%s\t%s\n", a, $1, b, ":", $2}'\
-  | $GREP -P -v "^[0-9]+\t%" | $GREP "\." --color=auto
+  | $GREP -a -P -v "^[0-9]+\t%" | $GREP -a "\." $GREP_COLOR
 }
 
 # Runs spell checker (aspell)
@@ -409,9 +429,9 @@ function run_pdflatex() {
   else
     $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
   fi
-  local ERR=`$GREP -i error "$FILENAME".log | $GREP -v -i infwarerr`
+  local ERR=`$GREP -a -i error "$FILENAME".log | $GREP -a -v -i infwarerr`
   if [[ -z $ERR ]] ; then
-    local ERR=`$GREP -i "^\!" "$FILENAME".log`
+    local ERR=`$GREP -a -i "^\!" "$FILENAME".log`
   fi
   if [[ -n $ERR ]] ; then
     echo -ne "\t\t\t\t${txtred}[done]"
@@ -470,13 +490,14 @@ while [[ -n $1 ]] ; do
             CHKTEX="true" ; shift ; break ;;
     -l)     shift ; line_width "$@" ; break ;;
     -n)     hardspaces "$2" ; exit 0 ;;
-    -s)     sentences "basic" "$2" ; exit 0 ;;
-    -ss)    sentences "strict" "$2" ; exit 0 ;;
-    -sc)    shift ; spell_checker "$@" ; break ;;
-    +sync)  APPENDSYNCTEX="true" ; shift ;;
+    +n)     disable_colors ; shift ;;
     +o)     OPENPDFARG="true" ; shift ;;
     +p)     USEPS4PDFARG="true" ; shift ;;
+    -s)     sentences "basic" "$2" ; exit 0 ;;
     +s)     SHOWSUMMARY="true" ; shift ;;
+    -sc)    shift ; spell_checker "$@" ; break ;;
+    -ss)    sentences "strict" "$2" ; exit 0 ;;
+    +sync)  APPENDSYNCTEX="true" ; shift ;;
     -[vV])  echo "$THEREALNAME  $VERSION" ; echo ; exit 0 ;;
     -*)     echo -ne "Unknown switch: ${txtylw}$1${txtrst}." ;
             echo "  Type:  \"${txtbld}$THEREALNAME -h${txtrst}\"  for help." ;
@@ -539,7 +560,7 @@ if [[ -n $MAKEBIBTEXARG || -n $MAKEONLYBIBTEXARG ]] ; then
   echo -ne "${txtund}BIBTEX${txtrst}..."
   rm -f "$FILENAME-bibtex.log" >&- 2>&-  # old BibTeX log file
   BIBOUT=`$BIBTEX_PROGRAM "$FILENAME" 2>&-`
-  BIBERR=`echo $BIBOUT | $GREP -E -i "error|warning"`
+  BIBERR=`echo $BIBOUT | $GREP -a -E -i "error|warning"`
   if [[ -n $BIBERR ]] ; then
     echo "$BIBOUT" > $FILENAME-bibtex.log
     echo -ne "\t\t\t\t${txtred}[done]"
@@ -609,7 +630,7 @@ for X in `seq 1 $THRICE` ; do
     check_programs "$GREP"
     echo -ne "${txtund}PS4PDF${txtrst}...\t\t\t\t"
     $PS4PDF_PROGRAM "$FILENAME" >&- 2>&-
-    ERR=`$GREP -E -i "error|emergency stop" "$FILENAME".log | $GREP -v -i infwarerr`
+    ERR=`$GREP -a -E -i "error|emergency stop" "$FILENAME".log | $GREP -a -v -i infwarerr`
     if [[ -n $ERR ]] ; then
       echo -ne "${txtred}[done]"
       echo "  ${txtbld}(With errors! See $FILENAME.log file.)${txtrst}"
@@ -633,10 +654,10 @@ done
 # Problems summary (part 1 of 2)
 if [[ -n $SHOWSUMMARY ]] ; then
   check_programs "$GREP"
-  ERRORSNUM=`$GREP -c -i "^\!" "$FILENAME".log`
-  ERRORS=`$GREP -A2 -i "^\!" "$FILENAME".log`
-  WARNINGS=`$GREP -A2 -i warning "$FILENAME".log | $GREP -v -i infwarerr`
-  WARNINGSNUM=`echo "$WARNINGS" | $GREP -c -i warning`
+  ERRORSNUM=`$GREP -a -c -i "^\!" "$FILENAME".log`
+  ERRORS=`$GREP -a -A2 -i "^\!" "$FILENAME".log`
+  WARNINGS=`$GREP -a -A2 -i warning "$FILENAME".log | $GREP -a -v -i infwarerr`
+  WARNINGSNUM=`echo "$WARNINGS" | $GREP -a -c -i warning`
 fi
 
 # Cleanup
@@ -671,14 +692,14 @@ if [[ -n $SHOWSUMMARY && ( $ERRORSNUM > 0 || $WARNINGSNUM > 0 ) ]] ; then
     "${txtund}${txtbld}SUMMARY:                                      ${txtrst}"
   if [[ $ERRORSNUM > 0 ]] ; then
     echo -e "${txtblu}${txtbld}Errors ($ERRORSNUM):${txtrst}"
-    echo "$ERRORS" | $GREP -E -v "^[[:space:]]*$" |\
-      $GREP -A2 -i "^\!" --color=auto
-    echo "______________________________________________"
+    echo "$ERRORS" | $GREP -a -E -v "^[[:space:]]*$" |\
+      $GREP -a -A2 -i "^\!" $GREP_COLOR
+    echo "${txtund}                                              ${txtrst}"
   fi
   if [[ $WARNINGSNUM > 0 ]] ; then
     echo -e "${txtcyn}${txtbld}Warnings ($WARNINGSNUM):${txtrst}"
-    echo "$WARNINGS" | $GREP -E -v "^[[:space:]]*$" |\
-      $GREP -A2 -i "warning"  --color=auto
+    echo "$WARNINGS" | $GREP -a -E -v "^[[:space:]]*$" |\
+      $GREP -a -A2 -i "warning" $GREP_COLOR
   fi
 fi
 

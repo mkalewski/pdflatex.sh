@@ -3,7 +3,7 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Version: 3.3.0
+:Version: 3.3.1
 :License: MIT License
 :Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
@@ -13,7 +13,7 @@ Synopsis
 ::
 
   pdflatex.sh  -h | -V
-  pdflatex.sh  [ +3 +b +g +h +i +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
   pdflatex.sh  -gs | -rs | -gd | -rd  DIR
   pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
@@ -105,23 +105,25 @@ Options
   default ``WIDTH=80``)
 ``-n FILE``
   Check non-breaking spaces.
-``-s FILE``
-  Check sentence separators.
-``+s``
-  Print a summary of problems (errors and warnings) after the compilation.
-``-ss FILE``
-  STRICTLY check sentence separators.
-``-sc [LANG] FILE``
-  Start the interactive ``aspell`` spell checker (by default ``LANG="en_GB"``
-  and UTF-8 encoding is used).
-``+sync``
-  Enable the synchronization between the source file and the resulting DVI or
-  PDF file.  (About the option see also `"Direct and reverse synchronization
-  with SyncTEX" <http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf>`_.)
+``+n``
+  Disable output coloring during the compilation.
 ``+o``
   Open the resulting PDF (or DVI) file after the compilation.
 ``+p``
   Use ``ps4pdf`` instead of ``pdflatex``/``latex`` (PSTricks).
+``-s FILE``
+  Check sentence separators.
+``+s``
+  Print a summary of problems (errors and warnings) after the compilation.
+``-sc [LANG] FILE``
+  Start the interactive ``aspell`` spell checker (by default ``LANG="en_GB"``
+  and UTF-8 encoding is used).
+``-ss FILE``
+  STRICTLY check sentence separators.
+``+sync``
+  Enable the synchronization between the source file and the resulting DVI or
+  PDF file.  (About the option see also `"Direct and reverse synchronization
+  with SyncTEX" <http://www.tug.org/TUGboat/tb29-3/tb93laurens.pdf>`_.)
 ``-V``
   Print the script version.
 
@@ -134,7 +136,7 @@ Examples
     $ pdflatex.sh file.tex
     PDFLATEX...                         [done]
     PDFLATEX...                         [done]
-    CLEANUP.....................        [done]
+    CLEANUP...                          [done]
 
 * Compile ``file.tex`` with BibTeX, MakeGlossaries, and MakeIndex, and open a
   PDF browser with the output file after the compilation::
@@ -168,7 +170,7 @@ Examples
 
 Copyright
 =========
-| (c) 2007-2014 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+| (c) 2007-2015 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 |
 | This program comes with ABSOLUTELY NO WARRANTY.
 | THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE TERMS
