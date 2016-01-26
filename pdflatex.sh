@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UTF-8
 
-#  (c) 2007-2015 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+#  (c) 2007-2016 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 #
 #  This program comes with ABSOLUTELY NO WARRANTY.
 #  THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE
@@ -14,11 +14,11 @@
 #
 #  SYNOPSIS
 #    pdflatex.sh  -h | -V
-#    pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
+#    pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync +shell ]  FILE(.tex)
 #    pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
-#    pdflatex.sh  -gs | -rs | -gd | -rd  DIR
-#    pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
-#                 | -ss | -sc [LANG]  FILE(.tex)
+#    pdflatex.sh  -gs | -rs | -gd | -rd  DIRECTORY
+#    pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
+#                 | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
 #    A bash script to simplify TeX/LaTeX/XeLaTeX files compilation and more.
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.3.1
+VERSION=3.4.0
 
 
 # PROGRAMS
@@ -63,7 +63,7 @@ ASPELL_LANG_OPT="-l en_GB"
 CHKTEX_OPT="-q -v1"
 GREP_COLOR="--color=auto"
 LATEX_BATCHMODE_OPT="-interaction batchmode"
-#LATEX_OUTPUT_DIRECTORY_OPT="-output-directory"
+LATEX_SHELL_ESCAPE_OPT="-shell-escape"
 PDFLATEX_SYNCTEX_OPT="-synctex=1"
 PDFNUP_OPT="--paper a4paper --frame true --scale 0.96 --delta \"2mm 2mm\""
 PS4PDF_LATEX_OPT="\AtBeginDocument{\RequirePackage{pst-pdf}}"
@@ -86,6 +86,9 @@ AUXILIARYEXTS="$AUXILIARYEXTS_COMMON bbl gls ind"
 AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_COMMON dvi gls ind pdf synctex.gz"
 AUXILIARYEXTS_INDEX="$AUXILIARYEXTS_COMMON bbl div gls pdf synctex.gz"
 AUXILIARYEXTS_GLOSSARIES="$AUXILIARYEXTS_COMMON bbl div ind pdf synctex.gz"
+
+# Options to pass to the latex/pdflatex/xelatex compilers:
+LATEX_OPTIONS="$LATEX_BATCHMODE_OPT"
 
 # Base name of the script:
 THENAME="$(basename $0)"
@@ -125,7 +128,7 @@ set +H
 function print_help() {
 cat <<EOF
 
-${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2015\
+${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2016\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
     ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX FILES COMPILATION\
@@ -145,13 +148,13 @@ ${txtbld}Usage${txtrst}:
   pdflatex.sh  -h | -V
     Print help or version.
 
-  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync +shell ]  FILE(.tex)
     Compile (La)TeX files.
 
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
     PDF documents manipulation.
 
-  pdflatex.sh  -gs | -rs | -gd | -rd  DIR
+  pdflatex.sh  -gs | -rs | -gd | -rd  DIRECTORY
     Convert images.
 
   pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
@@ -159,44 +162,46 @@ ${txtbld}Usage${txtrst}:
     Miscellaneous operations.
 
 ${txtbld}Options${txtrst}:
-  -2x1 FILE            put two pages of the PDF FILE on a single A4 sheet
-                       (the output will be in a FILE-nup.pdf file)
-  -2x2 FILE            put four pages of the PDF FILE on a single A4 sheet
-                       (the output will be in a FILE-nup.pdf file)
-  +3                   run 'latex'/'pdflatex' thrice (default is twice)
-  -b   FILE            make ONLY BibTeX
-  +b                   make ALSO BibTeX
-  -c   FILE            cleanup (remove auxiliary files)
-  -g   FILE            make ONLY glossaries (MakeGlossaries)
-  +g                   make ALSO glossaries (MakeGlossaries)
-  -gs  DIR             convert SVG images in directory DIR
-  -rs  DIR             convert SVG images in directory DIR recursively
-  -gd  DIR             convert DIA images in directory DIR
-  -rd  DIR             convert DIA images in directory DIR recursively
-  -h                   print (this) help message and exit
-  +h                   make a handout from a beamer presentation, i.e., without
-                       overlays, pauses, and other Beamer effects (the output
-                       will be in a FILE-handout.pdf file)
-  -i   FILE            make ONLY index (MakeIndex)
-  +i                   make ALSO index (MakeIndex)
-  -k   FILE            run the 'chktex' command (if available)
-  -kk  FILE            the same as '-k' but only errors are shown
-  -l   [WIDTH] FILE    check if the length of each line in FILE does not exceed
-                       the given width (by default WIDTH=80)
-  -n   FILE            check non-breaking spaces
-  +n                   disable output coloring during the compilation
-  +o                   open the resulting PDF (or DVI) file after the
-                       compilation
-  +p                   use 'ps4pdf' instead of 'pdflatex'/'latex' (PSTricks)
-  -s   FILE            check sentence separators
-  +s                   print a summary of problems (errors and warnings) after
-                       the compilation
-  -sc  [LANG] FILE     start the interactive 'aspell' spell checker (by default
-                       LANG="en_GB" and UTF-8 encoding is used)
-  -ss  FILE            STRICTLY check sentence separators
-  +sync                enable the synchronization between the source file and
-                       the resulting DVI or PDF file
-  -V                   print the script version
+  -2x1 FILE          put two pages of the PDF FILE on a single A4 sheet (the
+                     output will be in a FILE-nup.pdf file)
+  -2x2 FILE          put four pages of the PDF FILE on a single A4 sheet (the
+                     output will be in a FILE-nup.pdf file)
+  +3                 run 'latex'/'pdflatex'/'xelatex' thrice (default is twice)
+  -b   FILE          make ONLY BibTeX
+  +b                 make ALSO BibTeX
+  -c   FILE          cleanup (remove auxiliary files)
+  -g   FILE          make ONLY glossaries (MakeGlossaries)
+  +g                 make ALSO glossaries (MakeGlossaries)
+  -gs  DIRECTORY     convert SVG images in directory DIRECTORY
+  -rs  DIRECTORY     convert SVG images in directory DIRECTORY recursively
+  -gd  DIRECTORY     convert DIA images in directory DIRECTORY
+  -rd  DIRECTORY     convert DIA images in directory DIRECTORY recursively
+  -h                 print (this) help message and exit
+  +h                 make a handout from a beamer presentation, i.e., without
+                     overlays, pauses, and other Beamer effects (the output
+                     will be in a FILE-handout.pdf file)
+  -i   FILE          make ONLY index (MakeIndex)
+  +i                 make ALSO index (MakeIndex)
+  -k   FILE          run the 'chktex' command (if available)
+  -kk  FILE          the same as '-k' but only errors are shown
+  -l   [WIDTH] FILE  check if the length of each line in FILE does not exceed
+                     the given width (by default WIDTH=80)
+  -n   FILE          check non-breaking spaces
+  +n                 disable output coloring during the compilation
+  +o                 open the resulting PDF (or DVI) file after the compilation
+  +p                 use 'ps4pdf' instead of 'latex'/'pdflatex'/'xelatex'
+                     (the PSTricks package)
+  -s   FILE          check sentence separators
+  +s                 print a summary of problems (errors and warnings) after
+                     the compilation
+  -sc  [LANG] FILE   start the interactive 'aspell' spell checker (by default
+                     LANG="en_GB" and UTF-8 encoding is used)
+  +shell             enable the shell escape option of 'latex'/'pdflatex'/
+                     'xelatex'
+  -ss  FILE          STRICTLY check sentence separators
+  +sync              enable the synchronization between the source file and the
+                     resulting DVI or PDF file
+  -V                 print the script version
 
 ${txtbld}Examples${txtrst}:
   pdflatex.sh file.tex
@@ -423,12 +428,7 @@ function spell_checker() {
 function run_pdflatex() {
   check_programs "$GREP"
   echo -ne "$TEXT..."
-  if [[ -n $APPENDSYNCTEX ]] ; then
-    $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
-      "$FILENAME" >&- 2>&-
-  else
-    $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$FILENAME" >&- 2>&-
-  fi
+  $LATEX_PROGRAM $LATEX_OPTIONS "$FILENAME" >&- 2>&-
   local ERR=`$GREP -a -i error "$FILENAME".log | $GREP -a -v -i infwarerr`
   if [[ -z $ERR ]] ; then
     local ERR=`$GREP -a -i "^\!" "$FILENAME".log`
@@ -496,8 +496,9 @@ while [[ -n $1 ]] ; do
     -s)     sentences "basic" "$2" ; exit 0 ;;
     +s)     SHOWSUMMARY="true" ; shift ;;
     -sc)    shift ; spell_checker "$@" ; break ;;
+    +shell) LATEX_OPTIONS="$LATEX_OPTIONS $LATEX_SHELL_ESCAPE_OPT" ; shift ;;
     -ss)    sentences "strict" "$2" ; exit 0 ;;
-    +sync)  APPENDSYNCTEX="true" ; shift ;;
+    +sync)  LATEX_OPTIONS="$LATEX_OPTIONS $PDFLATEX_SYNCTEX_OPT" ; shift ;;
     -[vV])  echo "$THEREALNAME  $VERSION" ; echo ; exit 0 ;;
     -*)     echo -ne "Unknown switch: ${txtylw}$1${txtrst}." ;
             echo "  Type:  \"${txtbld}$THEREALNAME -h${txtrst}\"  for help." ;
@@ -638,13 +639,8 @@ for X in `seq 1 $THRICE` ; do
     else
       echo "${txtgrn}[done]${txtrst}"
       echo -ne "$TEXT...\t\t\t\t"
-      if [[ -n $APPENDSYNCTEX ]] ; then
-        $LATEX_PROGRAM $PDFLATEX_SYNCTEX_OPT $LATEX_BATCHMODE_OPT \
-          "$PS4PDF_LATEX_OPT \input{$FILENAME}" >&- 2>&-
-      else
-        $LATEX_PROGRAM $LATEX_BATCHMODE_OPT "$PS4PDF_LATEX_OPT \
-          \input{$FILENAME}" >&- 2>&-
-      fi
+      $LATEX_PROGRAM $LATEX_OPTIONS "$PS4PDF_LATEX_OPT \
+        \input{$FILENAME}" >&- 2>&-
       echo "${txtgrn}[done]${txtrst}"
       AUXILIARYEXTS="$AUXILIARYEXTS log"
     fi

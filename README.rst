@@ -3,7 +3,7 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Version: 3.3.1
+:Version: 3.4.0
 :License: MIT License
 :Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
@@ -13,11 +13,11 @@ Synopsis
 ::
 
   pdflatex.sh  -h | -V
-  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync ]  FILE(.tex)
+  pdflatex.sh  [ +3 +b +g +h +i +n +o +p +s +sync +shell ]  FILE(.tex)
   pdflatex.sh  -2x1 | -2x2  FILE(.pdf)
-  pdflatex.sh  -gs | -rs | -gd | -rd  DIR
-  pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s
-               | -ss | -sc [LANG]  FILE(.tex)
+  pdflatex.sh  -gs | -rs | -gd | -rd  DIRECTORY
+  pdflatex.sh  -b | -c | -g | -i | -k | -kk | -l [WIDTH] | -n | -s | -ss
+               | -sc [LANG]  FILE(.tex)
 
 Description
 ===========
@@ -68,7 +68,7 @@ Options
   Put four pages of the PDF FILE on a single A4 sheet (the output will be in a
   FILE-nup.pdf file).
 ``+3``
-  Run ``latex``/``pdflatex`` thrice (default is twice).
+  Run ``latex``/``pdflatex``/``xelatex`` thrice (default is twice).
 ``-b FILE``
   Make ONLY BibTeX.
 ``+b``
@@ -79,14 +79,14 @@ Options
   Make ONLY glossaries (MakeGlossaries).
 ``+g``
   Make ALSO glossaries (MakeGlossaries).
-``-gs DIR``
-  Convert SVG images in directory DIR.
-``-rs DIR``
-  Convert SVG images in directory DIR recursively.
-``-gd DIR``
-  Convert DIA images in directory DIR.
-``-rd DIR``
-  Convert DIA images in directory DIR recursively.
+``-gs DIRECTORY``
+  Convert SVG images in directory DIRECTORY.
+``-rs DIRECTORY``
+  Convert SVG images in directory DIRECTORY recursively.
+``-gd DIRECTORY``
+  Convert DIA images in directory DIRECTORY.
+``-rd DIRECTORY``
+  Convert DIA images in directory DIRECTORY recursively.
 ``-h``
   Print the help message and exit.
 ``+h``
@@ -110,7 +110,8 @@ Options
 ``+o``
   Open the resulting PDF (or DVI) file after the compilation.
 ``+p``
-  Use ``ps4pdf`` instead of ``pdflatex``/``latex`` (PSTricks).
+  Use ``ps4pdf`` instead of ``latex``/``pdflatex``/``xelatex`` (the
+ `"PSTricks" <https://www.ctan.org/pkg/pstricks-base>`_ package).
 ``-s FILE``
   Check sentence separators.
 ``+s``
@@ -118,6 +119,9 @@ Options
 ``-sc [LANG] FILE``
   Start the interactive ``aspell`` spell checker (by default ``LANG="en_GB"``
   and UTF-8 encoding is used).
+``+shell``
+  Enable the shell escape option of ``latex``/``pdflatex``/``xelatex`` (e.g.,
+  for the `"minted" <https://www.ctan.org/pkg/minted>`_ package).
 ``-ss FILE``
   STRICTLY check sentence separators.
 ``+sync``
@@ -170,10 +174,12 @@ Examples
 
 Copyright
 =========
-| (c) 2007-2015 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
-|
-| This program comes with ABSOLUTELY NO WARRANTY.
-| THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE TERMS
-| AND CONDITIONS OF THE MIT LICENSE.  YOU SHOULD HAVE RECEIVED A COPY OF THE
-| LICENSE ALONG WITH THIS SOFTWARE; IF NOT, YOU CAN DOWNLOAD A COPY FROM
-| HTTP://WWW.OPENSOURCE.ORG.
+```
+(c) 2007-2016 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+
+This program comes with ABSOLUTELY NO WARRANTY.
+THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE TERMS
+AND CONDITIONS OF THE MIT LICENSE.  YOU SHOULD HAVE RECEIVED A COPY OF THE
+LICENSE ALONG WITH THIS SOFTWARE; IF NOT, YOU CAN DOWNLOAD A COPY FROM
+HTTP://WWW.OPENSOURCE.ORG.
+```
