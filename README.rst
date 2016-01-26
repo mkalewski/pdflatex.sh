@@ -111,7 +111,7 @@ Options
   Open the resulting PDF (or DVI) file after the compilation.
 ``+p``
   Use ``ps4pdf`` instead of ``latex``/``pdflatex``/``xelatex`` (the
- `"PSTricks" <https://www.ctan.org/pkg/pstricks-base>`_ package).
+  `"PSTricks" <https://www.ctan.org/pkg/pstricks-base>`_ package).
 ``-s FILE``
   Check sentence separators.
 ``+s``
@@ -174,6 +174,7 @@ Examples
 
 Copyright
 =========
+
 ```
 (c) 2007-2016 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 
