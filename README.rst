@@ -46,12 +46,13 @@ Note
 If the script is run as `pdflatex.sh`, then the `pdflatex` command is used
 (producing PDF output files).  However, if the script is run as `latex.sh`,
 then the `latex` command is used (producing DVI output files), and if the
-script is run as `xelatex.sh`, then the `xelatex` command is used (producing
+script is run as `xelatex.sh` or 'lualatex.sh', then the `xelatex` resp. 'lualatex' command is used (producing
 PDF output files).  Thus, if necessary, symbolic links may be created to use
 the script easily, e.g.::
 
   $ ln -s ./pdflatex.sh ./latex.sh
   $ ln -s ./pdflatex.sh ./xelatex.sh
+  $ ln -s ./pdflatex.sh ./lualatex.sh
 
 **Arch Linux** users may use `tdi <https://github.com/tdi>`_'s `AUR package
 <http://aur.archlinux.org/packages.php?ID=55739>`_ to obtain the script.
