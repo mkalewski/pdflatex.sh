@@ -21,7 +21,7 @@
 #                 | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
-#    A bash script to simplify TeX/LaTeX/XeLaTeX files compilation and more.
+#    A bash script to simplify TeX/LaTeX/XeLaTeX/LuaLaTeX files compilation and more.
 #    Just run the script to get more information: './pdflatex.sh'.
 #
 #  REPORTING BUGS
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.4.0
+VERSION=3.4.1
 
 
 # PROGRAMS
@@ -54,7 +54,7 @@ PDFLATEX_PROGRAM="pdflatex"
 PDFNUP_PROGRAM="pdfnup"
 PS4PDF_PROGRAM="ps4pdf"
 XELATEX_PROGRAM="xelatex"
-
+LUALATEX_PROGRAM="lualatex"
 
 # OPTIONS
 # =======
@@ -87,7 +87,7 @@ AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_COMMON dvi gls ind pdf synctex.gz"
 AUXILIARYEXTS_INDEX="$AUXILIARYEXTS_COMMON bbl div gls pdf synctex.gz"
 AUXILIARYEXTS_GLOSSARIES="$AUXILIARYEXTS_COMMON bbl div ind pdf synctex.gz"
 
-# Options to pass to the latex/pdflatex/xelatex compilers:
+# Options to pass to the latex/pdflatex/xelatex/LuaLaTeX compilers:
 LATEX_OPTIONS="$LATEX_BATCHMODE_OPT"
 
 # Base name of the script:
@@ -131,13 +131,13 @@ cat <<EOF
 ${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2016\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
-    ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX FILES COMPILATION\
+    ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX/LuaLaTeX FILES COMPILATION\
  AND MORE${txtrst}
 
 NOTE:  If the script is run as 'pdflatex.sh', then the 'pdflatex' command is
        used (producing PDF output files).  However, if the script is run as
        'latex.sh', then the 'latex' command is used (producing DVI output
-       files), and if the script is run as 'xelatex.sh', then the 'xelatex'
+       files), and if the script is run as 'xelatex.sh', then the 'xelatex' or 'LuaLaTeX'
        command is used (producing PDF output files).  Thus, if necessary,
        symbolic links may be created to use the script easily.
 
@@ -428,7 +428,7 @@ function spell_checker() {
 function run_pdflatex() {
   check_programs "$GREP"
   echo -ne "$TEXT..."
-  $LATEX_PROGRAM $LATEX_OPTIONS "$FILENAME" >&- 2>&-
+  $LATEX_PROGRAM $LATEX_OPTIONS "$FILENAME"
   local ERR=`$GREP -a -i error "$FILENAME".log | $GREP -a -v -i infwarerr`
   if [[ -z $ERR ]] ; then
     local ERR=`$GREP -a -i "^\!" "$FILENAME".log`
@@ -537,11 +537,13 @@ if [[ -n $CHKTEX ]] ; then
   mquit $?
 fi
 
-# Command to use: 'latex', 'pdflatex', or 'xelatex':
+# Command to use: 'latex', 'pdflatex', 'xelatex' or 'LuaLaTeX':
 if [[ $THENAME == "latex.sh" ]] ; then
   LATEX_PROGRAM=$LATEX_PROGRAM
 elif [[ $THENAME == "xelatex.sh" ]] ; then
   LATEX_PROGRAM=$XELATEX_PROGRAM
+elif [[ $THENAME == "lualatex.sh" ]] ; then
+  LATEX_PROGRAM=$LUALATEX_PROGRAM
 else
   LATEX_PROGRAM=$PDFLATEX_PROGRAM
 fi
