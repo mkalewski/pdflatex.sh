@@ -542,6 +542,8 @@ if [[ $THENAME == "latex.sh" ]] ; then
   LATEX_PROGRAM=$LATEX_PROGRAM
 elif [[ $THENAME == "xelatex.sh" ]] ; then
   LATEX_PROGRAM=$XELATEX_PROGRAM
+elif [[ $THENAME == "lualatex.sh" ]] ; then
+  LATEX_PROGRAM=$LUALATEX_PROGRAM
 else
   LATEX_PROGRAM=$PDFLATEX_PROGRAM
 fi
