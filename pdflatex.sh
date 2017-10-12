@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UTF-8
 
-#  (c) 2007-2016 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+#  (c) 2007-2017 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 #
 #  This program comes with ABSOLUTELY NO WARRANTY.
 #  THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE
@@ -21,8 +21,8 @@
 #                 | -sc [LANG]  FILE(.tex)
 #
 #  DESCRIPTION
-#    A bash script to simplify TeX/LaTeX/XeLaTeX files compilation and more.
-#    Just run the script to get more information: './pdflatex.sh'.
+#    A bash script to simplify TeX/LaTeX/XeLaTeX/LuaLaTeX files compilation and
+#    more.  Just run the script to get more information: './pdflatex.sh'.
 #
 #  REPORTING BUGS
 #    <https://github.com/mkalewski/pdflatex.sh/issues>
@@ -34,7 +34,7 @@
 
 # VERSION
 # =======
-VERSION=3.4.0
+VERSION=3.5.0
 
 
 # PROGRAMS
@@ -44,14 +44,14 @@ BIBTEX_PROGRAM="bibtex"
 CHKTEX_PROGRAM="chktex"
 DETEX_PROGRAM="detex"
 DIA_PROGRAM="dia"
-#EPSTOPDF_PROGRAM="epstopdf"  # obsolete
 INKSCAPE_PROGRAM="inkscape"
 LATEX_PROGRAM="latex"
-MAKEINDEX_PROGRAM="makeindex"
+LUALATEX_PROGRAM="lualatex"
 MAKEGLOSSARIES_PROGRAM="makeglossaries"
-PDF_VIEWER_PROGRAM="evince"
+MAKEINDEX_PROGRAM="makeindex"
 PDFLATEX_PROGRAM="pdflatex"
 PDFNUP_PROGRAM="pdfnup"
+PDF_VIEWER_PROGRAM="evince"
 PS4PDF_PROGRAM="ps4pdf"
 XELATEX_PROGRAM="xelatex"
 
@@ -62,12 +62,13 @@ ASPELL_ENC_OPT="--encoding=utf-8"
 ASPELL_LANG_OPT="-l en_GB"
 CHKTEX_OPT="-q -v1"
 GREP_COLOR="--color=auto"
+INKSCAPE_OPT=""  #  ="-T"  # converts text objects to paths on export
 LATEX_BATCHMODE_OPT="-interaction batchmode"
 LATEX_SHELL_ESCAPE_OPT="-shell-escape"
+MAKEGLOSSARIES_OPT="-q"
 PDFLATEX_SYNCTEX_OPT="-synctex=1"
 PDFNUP_OPT="--paper a4paper --frame true --scale 0.96 --delta \"2mm 2mm\""
 PS4PDF_LATEX_OPT="\AtBeginDocument{\RequirePackage{pst-pdf}}"
-MAKEGLOSSARIES_OPT="-q"
 
 
 # FILE TO BUILD
@@ -87,7 +88,7 @@ AUXILIARYEXTS_BIBTEX="$AUXILIARYEXTS_COMMON dvi gls ind pdf synctex.gz"
 AUXILIARYEXTS_INDEX="$AUXILIARYEXTS_COMMON bbl div gls pdf synctex.gz"
 AUXILIARYEXTS_GLOSSARIES="$AUXILIARYEXTS_COMMON bbl div ind pdf synctex.gz"
 
-# Options to pass to the latex/pdflatex/xelatex compilers:
+# Options to pass to the latex/pdflatex/xelatex/lualatex compilers:
 LATEX_OPTIONS="$LATEX_BATCHMODE_OPT"
 
 # Base name of the script:
@@ -128,18 +129,19 @@ set +H
 function print_help() {
 cat <<EOF
 
-${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2016\
+${txtbld}PDFLATEX.SH${txtrst} $VERSION (c) 2007-2017\
  ${txtbld}Michal Kalewski${txtrst} <mkalewski at cs.put.poznan.pl>
 
-    ${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX FILES COMPILATION\
- AND MORE${txtrst}
+${txtund}A BASH SCRIPT TO SIMPLIFY TeX/LaTeX/XeLaTeX/LuaLaTeX FILES\
+ COMPILATION AND MORE${txtrst}
 
 NOTE:  If the script is run as 'pdflatex.sh', then the 'pdflatex' command is
        used (producing PDF output files).  However, if the script is run as
        'latex.sh', then the 'latex' command is used (producing DVI output
-       files), and if the script is run as 'xelatex.sh', then the 'xelatex'
-       command is used (producing PDF output files).  Thus, if necessary,
-       symbolic links may be created to use the script easily.
+       files).  Moreover,  if the script is run as 'xelatex.sh' or
+       'lualatex.sh', then the 'xelatex' or 'lualatex' command is used
+       respectively (producing PDF output files).  Thus, if necessary, symbolic
+       links may be created to use the script easily.
 
 ${txtbld}For more information, please visit${txtrst}:  \
 <https://github.com/mkalewski/pdflatex.sh>
@@ -166,7 +168,8 @@ ${txtbld}Options${txtrst}:
                      output will be in a FILE-nup.pdf file)
   -2x2 FILE          put four pages of the PDF FILE on a single A4 sheet (the
                      output will be in a FILE-nup.pdf file)
-  +3                 run 'latex'/'pdflatex'/'xelatex' thrice (default is twice)
+  +3                 run 'latex'/'pdflatex'/'xelatex'/'lualatex' thrice
+                     (default is twice)
   -b   FILE          make ONLY BibTeX
   +b                 make ALSO BibTeX
   -c   FILE          cleanup (remove auxiliary files)
@@ -189,15 +192,15 @@ ${txtbld}Options${txtrst}:
   -n   FILE          check non-breaking spaces
   +n                 disable output coloring during the compilation
   +o                 open the resulting PDF (or DVI) file after the compilation
-  +p                 use 'ps4pdf' instead of 'latex'/'pdflatex'/'xelatex'
-                     (the PSTricks package)
+  +p                 use 'ps4pdf' instead of 'latex'/'pdflatex'/'xelatex'/
+                     'lualtex' (the PSTricks package)
   -s   FILE          check sentence separators
   +s                 print a summary of problems (errors and warnings) after
                      the compilation
   -sc  [LANG] FILE   start the interactive 'aspell' spell checker (by default
                      LANG="en_GB" and UTF-8 encoding is used)
   +shell             enable the shell escape option of 'latex'/'pdflatex'/
-                     'xelatex'
+                     'xelatex'/'lualatex'
   -ss  FILE          STRICTLY check sentence separators
   +sync              enable the synchronization between the source file and the
                      resulting DVI or PDF file
@@ -300,12 +303,13 @@ function convert_images() {
     local IMGFILES=`find $1 -type f -iname "*.$CONVERTIMGRARG" 2>&-`
   fi
   if [[ $CONVERTIMGARG == "svg" || $CONVERTIMGRARG == "svg" ]] ; then
-    check_programs "$INKSCAPE_PROGRAM" #EPSTOPDF_PROGRAM
+    check_programs "$INKSCAPE_PROGRAM"
     echo -ne "CONVERT IMAGES..."
     for IMG in $IMGFILES ; do
-      $INKSCAPE_PROGRAM -T -A "${IMG%.svg}.pdf" "$IMG" 2>/dev/null || die
-      $INKSCAPE_PROGRAM -T -P "${IMG%.svg}.ps" "$IMG" 2>/dev/null || die
-      #$EPSTOPDF_PROGRAM "${IMG%.svg}.eps"
+      $INKSCAPE_PROGRAM $INKSCAPE_OPT -A "${IMG%.svg}.pdf" "$IMG" 2>/dev/null \
+        || die
+      $INKSCAPE_PROGRAM $INKSCAPE_OPT -P "${IMG%.svg}.ps" "$IMG" 2>/dev/null \
+        || die
       echo -ne "."
     done
   elif [[ $CONVERTIMGARG == "dia" || $CONVERTIMGRARG == "dia" ]] ; then
@@ -428,7 +432,7 @@ function spell_checker() {
 function run_pdflatex() {
   check_programs "$GREP"
   echo -ne "$TEXT..."
-  $LATEX_PROGRAM $LATEX_OPTIONS "$FILENAME" >&- 2>&-
+  $LATEX_PROGRAM $LATEX_OPTIONS "$FILENAME" &>/dev/null
   local ERR=`$GREP -a -i error "$FILENAME".log | $GREP -a -v -i infwarerr`
   if [[ -z $ERR ]] ; then
     local ERR=`$GREP -a -i "^\!" "$FILENAME".log`
@@ -537,11 +541,13 @@ if [[ -n $CHKTEX ]] ; then
   mquit $?
 fi
 
-# Command to use: 'latex', 'pdflatex', or 'xelatex':
+# Command to use: 'latex', 'pdflatex', 'xelatex', or 'lualatex':
 if [[ $THENAME == "latex.sh" ]] ; then
   LATEX_PROGRAM=$LATEX_PROGRAM
 elif [[ $THENAME == "xelatex.sh" ]] ; then
   LATEX_PROGRAM=$XELATEX_PROGRAM
+elif [[ $THENAME == "lualatex.sh" ]] ; then
+  LATEX_PROGRAM=$LUALATEX_PROGRAM
 else
   LATEX_PROGRAM=$PDFLATEX_PROGRAM
 fi

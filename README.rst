@@ -3,7 +3,7 @@ pdflatex.sh
 ===========
 
 :Author:  Michał Kalewski
-:Version: 3.4.0
+:Version: 3.5.0
 :License: MIT License
 :Bug reports: https://github.com/mkalewski/pdflatex.sh/issues
 
@@ -21,8 +21,8 @@ Synopsis
 
 Description
 ===========
-A bash script to simplify TeX, LaTeX, and XeLaTeX files compilation with
-bibliographies (BibTeX), glossaries (MakeGlossaries), indices (MakeIndex),
+A bash script to simplify TeX, LaTeX, XeLaTeX, and LuaLaTeX files compilation
+with bibliographies (BibTeX), glossaries (MakeGlossaries), indices (MakeIndex),
 PSTricks, and more.  In the simplest case, the script is run as follows::
 
   $ pdflatex.sh file.tex
@@ -33,7 +33,7 @@ compilation.
 
 The ``pdflatex.sh`` script can also be used to convert images to the PDF format
 and to manipulate output PDF documents.  The script also lets you check
-syntactic and semantic correctness of (La)TeX source files, e.g. with the use
+syntactic and semantic correctness of (La)TeX source files, e.g., with the use
 of *ChkTeX*, and create handouts from beamer slides (for more information see
 options_ and examples_).
 
@@ -45,16 +45,14 @@ Note
 
 If the script is run as `pdflatex.sh`, then the `pdflatex` command is used
 (producing PDF output files).  However, if the script is run as `latex.sh`,
-then the `latex` command is used (producing DVI output files), and if the
-script is run as `xelatex.sh`, then the `xelatex` command is used (producing
-PDF output files).  Thus, if necessary, symbolic links may be created to use
-the script easily, e.g.::
+then the `latex` command is used (producing DVI output files).  Moreover,  if
+the script is run as `xelatex.sh` or `lualatex.sh`, then the `xelatex` or
+`lualatex` command is used respectively (producing PDF output files).  Thus, if
+necessary, symbolic links may be created to use the script easily, e.g.::
 
   $ ln -s ./pdflatex.sh ./latex.sh
   $ ln -s ./pdflatex.sh ./xelatex.sh
-
-**Arch Linux** users may use `tdi <https://github.com/tdi>`_'s `AUR package
-<http://aur.archlinux.org/packages.php?ID=55739>`_ to obtain the script.
+  $ ln -s ./pdflatex.sh ./lualatex.sh
 
 **OS X** users need to install GNU grep, i.e., ``ggrep``, which is required for
 the script to work correctly.
@@ -68,7 +66,8 @@ Options
   Put four pages of the PDF FILE on a single A4 sheet (the output will be in a
   FILE-nup.pdf file).
 ``+3``
-  Run ``latex``/``pdflatex``/``xelatex`` thrice (default is twice).
+  Run ``latex``/``pdflatex``/``xelatex``/``lualatex`` thrice (default is
+  twice).
 ``-b FILE``
   Make ONLY BibTeX.
 ``+b``
@@ -110,8 +109,8 @@ Options
 ``+o``
   Open the resulting PDF (or DVI) file after the compilation.
 ``+p``
-  Use ``ps4pdf`` instead of ``latex``/``pdflatex``/``xelatex`` (the
-  `"PSTricks" <https://www.ctan.org/pkg/pstricks-base>`_ package).
+  Use ``ps4pdf`` instead of ``latex``/``pdflatex``/``xelatex``/``lualatex``
+  (the `"PSTricks" <https://www.ctan.org/pkg/pstricks-base>`_ package).
 ``-s FILE``
   Check sentence separators.
 ``+s``
@@ -120,8 +119,9 @@ Options
   Start the interactive ``aspell`` spell checker (by default ``LANG="en_GB"``
   and UTF-8 encoding is used).
 ``+shell``
-  Enable the shell escape option of ``latex``/``pdflatex``/``xelatex`` (e.g.,
-  for the `"minted" <https://www.ctan.org/pkg/minted>`_ package).
+  Enable the shell escape option of
+  ``latex``/``pdflatex``/``xelatex``/``lualatex`` (e.g., for the `"minted"
+  <https://www.ctan.org/pkg/minted>`_ package).
 ``-ss FILE``
   STRICTLY check sentence separators.
 ``+sync``
@@ -174,7 +174,7 @@ Examples
 
 Copyright
 =========
-| (c) 2007-2016 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
+| (c) 2007-2017 Michal Kalewski  <mkalewski at cs.put.poznan.pl>
 |
 | This program comes with ABSOLUTELY NO WARRANTY.
 | THIS IS FREE SOFTWARE, AND YOU ARE WELCOME TO REDISTRIBUTE IT UNDER THE TERMS
